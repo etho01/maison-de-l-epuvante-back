@@ -1,0 +1,85 @@
+### Variables
+@baseUrl = http://localhost:8000
+@token = 
+
+### 1. Créer un utilisateur
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "plainPassword": "password123",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+### 2. Se connecter
+# @name login
+POST {{baseUrl}}/api/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 3. Récupérer un utilisateur (nécessite authentification)
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+
+### 4. Modifier un utilisateur (PUT)
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "test@example.com"
+}
+
+### 5. Modifier un utilisateur (PATCH)
+PATCH {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/merge-patch+json
+
+{
+  "firstName": "Janet"
+}
+
+### 6. Changer le mot de passe
+POST {{baseUrl}}/api/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "newPassword456"
+}
+
+### 7. Demander une réinitialisation de mot de passe
+POST {{baseUrl}}/api/reset-password-request
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### 8. Vérifier l'email (remplacer id et token)
+GET {{baseUrl}}/api/verify/email?id=1&token=VERIFICATION_TOKEN
+
+### 9. Renvoyer l'email de vérification
+POST {{baseUrl}}/api/verify/resend
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### 10. Lister tous les utilisateurs (ADMIN uniquement)
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+
+### 11. Créer un admin via ligne de commande
+# Exécuter dans le terminal :
+# php bin/console app:create-user admin@example.com admin123 --admin --verified --first-name=Admin --last-name=User
