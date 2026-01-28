@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Environnement
+.env
+.env.*
+!.env.docker
+
+# Dépendances
+/vendor/
+/node_modules/
+
+# Cache et logs
+/var/
+!/var/cache/.gitkeep
+!/var/log/.gitkeep
+
+# Tests
+/tests/
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.cache
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.yaml
+docker-compose.yml
+Dockerfile
+.dockerignore

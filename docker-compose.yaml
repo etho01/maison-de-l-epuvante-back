@@ -1,0 +1,65 @@
+services:
+  database:
+    image: mariadb:11.3
+    container_name: maison_epouvante_db
+    restart: always
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=maison_epouvante
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - TZ=Europe/Paris
+    ports:
+      - "3307:3306"
+    networks:
+      - maison_epouvante
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: maison_epouvante_phpmyadmin
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "8900:80"
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 50M
+    networks:
+      - maison_epouvante
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maison_epouvante_api
+    ports:
+      - "8901:443"
+      - "8902:80"
+    volumes:
+      - ./:/var/www/project
+      - ./php.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      - PHP_MEMORY_LIMIT=512M
+      - APP_ENV=dev
+      - DATABASE_URL=mysql://root:@database:3306/maison_epouvante?serverVersion=mariadb-11.3.0&charset=utf8mb4
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - maison_epouvante
+
+networks:
+  maison_epouvante:
+    driver: bridge
+
+volumes:
+  db-data:
