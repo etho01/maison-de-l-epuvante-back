@@ -50,6 +50,12 @@ use Symfony\Component\Validator\Constraints as Assert;
             name: 'api_current_user',
             security: "is_granted('ROLE_USER')"
         ),
+        new Patch(
+            uriTemplate: '/me',
+            controller: \App\Controller\AuthController::class . '::updateCurrentUser',
+            name: 'api_update_current_user',
+            security: "is_granted('ROLE_USER')"
+        ),
         
         // Password Management Operations
         new Post(
