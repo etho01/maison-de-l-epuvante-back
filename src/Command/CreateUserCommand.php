@@ -32,7 +32,7 @@ class CreateUserCommand extends Command
             ->addArgument('email', InputArgument::REQUIRED, 'Email de l\'utilisateur')
             ->addArgument('password', InputArgument::REQUIRED, 'Mot de passe')
             ->addOption('admin', 'a', InputOption::VALUE_NONE, 'Créer un administrateur')
-            ->addOption('verified', 'v', InputOption::VALUE_NONE, 'Marquer l\'email comme vérifié')
+            ->addOption('verified', null, InputOption::VALUE_NONE, 'Marquer l\'email comme vérifié')
             ->addOption('first-name', null, InputOption::VALUE_REQUIRED, 'Prénom')
             ->addOption('last-name', null, InputOption::VALUE_REQUIRED, 'Nom')
         ;
@@ -54,7 +54,10 @@ class CreateUserCommand extends Command
 
         $user = new User();
         $user->setEmail($email);
-        $user->setPlainPassword($password);
+        
+        // Hash le mot de passe
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
+        $user->setPassword($hashedPassword);
         
         if ($input->getOption('admin')) {
             $user->setRoles(['ROLE_ADMIN']);

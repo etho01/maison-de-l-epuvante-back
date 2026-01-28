@@ -20,20 +20,16 @@ final class Version20260121000001 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE TABLE reset_password_request (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
             token VARCHAR(100) NOT NULL UNIQUE,
-            expires_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
-            created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
+            expires_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\',
+            created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\',
+            INDEX idx_reset_password_request_user (user_id),
+            INDEX idx_reset_password_request_token (token),
             CONSTRAINT fk_reset_password_request_user FOREIGN KEY (user_id) 
-                REFERENCES "user" (id) ON DELETE CASCADE
-        )');
-        
-        $this->addSql('CREATE INDEX idx_reset_password_request_user ON reset_password_request (user_id)');
-        $this->addSql('CREATE INDEX idx_reset_password_request_token ON reset_password_request (token)');
-        
-        $this->addSql('COMMENT ON COLUMN reset_password_request.expires_at IS \'(DC2Type:datetime_immutable)\'');
-        $this->addSql('COMMENT ON COLUMN reset_password_request.created_at IS \'(DC2Type:datetime_immutable)\'');
+                REFERENCES `user` (id) ON DELETE CASCADE
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
     }
 
     public function down(Schema $schema): void
