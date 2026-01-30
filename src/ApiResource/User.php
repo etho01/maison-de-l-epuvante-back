@@ -48,13 +48,17 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/me',
             controller: \App\Controller\AuthController::class . '::getCurrentUser',
             name: 'api_current_user',
-            security: "is_granted('ROLE_USER')"
+            security: "is_granted('ROLE_USER')",
+            read: false,
+            deserialize: false
         ),
         new Patch(
             uriTemplate: '/me',
             controller: \App\Controller\AuthController::class . '::updateCurrentUser',
             name: 'api_update_current_user',
-            security: "is_granted('ROLE_USER')"
+            security: "is_granted('ROLE_USER')",
+            read: false,
+            deserialize: false
         ),
         
         // Password Management Operations
