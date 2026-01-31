@@ -2,24 +2,58 @@
 
 namespace App\Ecommerce\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Patch;
 use App\Ecommerce\Repository\OrderRepository;
 use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`orders`')]
+#[ApiResource(
+    shortName: 'Order',
+    operations: [
+        new GetCollection(
+            security: "is_granted('ROLE_USER')",
+            normalizationContext: ['groups' => ['order:read', 'order:list']],
+        ),
+        new Get(
+            security: "is_granted('ROLE_ADMIN') or object.user == user",
+            normalizationContext: ['groups' => ['order:read', 'order:detail']],
+        ),
+        new Post(
+            uriTemplate: '/orders/checkout',
+            security: "is_granted('ROLE_USER')",
+            denormalizationContext: ['groups' => ['order:create']],
+            name: 'api_order_checkout',
+        ),
+        new Patch(
+            security: "is_granted('ROLE_ADMIN')",
+            denormalizationContext: ['groups' => ['order:update']],
+        ),
+    ],
+    normalizationContext: ['groups' => ['order:read']],
+    denormalizationContext: ['groups' => ['order:write']],
+    paginationEnabled: true,
+)]
 class Order
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['order:read', 'order:list', 'order:detail'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, unique: true)]
+    #[Groups(['order:read', 'order:list', 'order:detail'])]
     private ?string $orderNumber = null;
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
@@ -27,28 +61,36 @@ class Order
     private ?User $user = null;
 
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['order:read', 'order:detail'])]
     private Collection $items;
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: ['pending', 'processing', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'])]
+    #[Groups(['order:read', 'order:list', 'order:detail', 'order:update'])]
     private ?string $status = 'pending';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $totalAmount = '0.00';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $shippingCost = '0.00';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $taxAmount = '0.00';
 
     #[ORM\Column(type: Types::JSON)]
+    #[Groups(['order:read', 'order:detail', 'order:create'])]
     private array $shippingAddress = [];
 
     #[ORM\Column(type: Types::JSON)]
+    #[Groups(['order:read', 'order:detail', 'order:create'])]
     private array $billingAddress = [];
 
     #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $paymentMethod = null;
 
     #[ORM\Column(length: 255, nullable: true)]

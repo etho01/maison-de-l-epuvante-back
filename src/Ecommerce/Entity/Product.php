@@ -2,61 +2,117 @@
 
 namespace App\Ecommerce\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Repository\ProductRepository;
 use App\Entity\DigitalContent;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ORM\Table(name: 'products')]
+#[ApiResource(
+    shortName: 'Product',
+    operations: [
+        new GetCollection(
+            normalizationContext: ['groups' => ['product:read', 'product:list']],
+        ),
+        new Get(
+            normalizationContext: ['groups' => ['product:read', 'product:detail']],
+        ),
+        new Post(
+            security: "is_granted('ROLE_ADMIN')",
+            denormalizationContext: ['groups' => ['product:write']],
+        ),
+        new Put(
+            security: "is_granted('ROLE_ADMIN')",
+            denormalizationContext: ['groups' => ['product:write']],
+        ),
+        new Patch(
+            security: "is_granted('ROLE_ADMIN')",
+            denormalizationContext: ['groups' => ['product:write']],
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')",
+        ),
+    ],
+    normalizationContext: ['groups' => ['product:read']],
+    denormalizationContext: ['groups' => ['product:write']],
+    paginationEnabled: true,
+)]
+#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'type' => 'exact', 'category.id' => 'exact'])]
+#[ApiFilter(RangeFilter::class, properties: ['price'])]
+#[ApiFilter(BooleanFilter::class, properties: ['active', 'exclusiveOnline'])]
 class Product
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'cart:read', 'order:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, unique: true)]
     #[Assert\NotBlank]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotBlank]
     #[Assert\Positive]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
     private ?string $price = null;
 
     #[ORM\Column]
     #[Assert\PositiveOrZero]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?int $stock = 0;
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: ['physical', 'digital', 'subscription'])]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?string $type = 'physical';
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?string $sku = null;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write'])]
     private ?array $images = [];
 
     #[ORM\Column]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?bool $active = true;
 
     #[ORM\Column]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?bool $exclusiveOnline = false;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?Category $category = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: OrderItem::class)]

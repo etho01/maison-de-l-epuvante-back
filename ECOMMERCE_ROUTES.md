@@ -119,54 +119,6 @@ DELETE /api/products/{id}
 
 ---
 
-## 🛒 Panier
-
-### Obtenir mon panier
-```
-GET /api/cart/me
-```
-- **Accès:** ROLE_USER
-- **Retourne:** Panier de l'utilisateur connecté avec tous les items
-
-### Ajouter un article au panier
-```
-POST /api/cart/items
-```
-- **Accès:** ROLE_USER
-- **Payload:**
-```json
-{
-  "product": "/api/products/5",
-  "quantity": 2
-}
-```
-
-### Modifier la quantité d'un article
-```
-PATCH /api/cart/items/{itemId}
-```
-- **Accès:** ROLE_USER
-- **Payload:**
-```json
-{
-  "quantity": 3
-}
-```
-
-### Retirer un article du panier
-```
-DELETE /api/cart/items/{itemId}
-```
-- **Accès:** ROLE_USER
-
-### Vider le panier
-```
-DELETE /api/cart/clear
-```
-- **Accès:** ROLE_USER
-
----
-
 ## 📦 Commandes
 
 ### Lister mes commandes
@@ -411,6 +363,53 @@ Pour les routes protégées:
 ```
 Authorization: Bearer {jwt_token}
 ```
+
+## 🛒 Panier
+
+### Obtenir mon panier
+```
+GET /api/cart/me
+```
+- **Accès:** ROLE_USER
+- **Retourne:** Panier de l'utilisateur connecté avec tous les items
+
+### Ajouter un article au panier
+```
+POST /api/cart/items
+```
+- **Accès:** ROLE_USER
+- **Payload:**
+```json
+{
+  "product": "/api/products/5",
+  "quantity": 2
+}
+```
+
+### Modifier la quantité d'un article
+```
+PATCH /api/cart/items/{itemId}
+```
+- **Accès:** ROLE_USER
+- **Payload:**
+```json
+{
+  "quantity": 3
+}
+```
+
+### Retirer un article du panier
+```
+DELETE /api/cart/items/{itemId}
+```
+- **Accès:** ROLE_USER
+
+### Vider le panier
+```
+DELETE /api/cart/clear
+```
+- **Accès:** ROLE_USER
+
 
 ---
 

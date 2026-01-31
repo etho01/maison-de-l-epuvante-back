@@ -1,6 +1,10 @@
 api_platform:
     title: Hello API Platform
     version: 1.0.0
+    mapping:
+        paths:
+            - '%kernel.project_dir%/src/ApiResource'
+            - '%kernel.project_dir%/src/Ecommerce/ApiResource'
     defaults:
         stateless: true
         cache_headers:

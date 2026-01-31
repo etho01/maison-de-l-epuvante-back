@@ -24,6 +24,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'App\Entity'
                 alias: App
+            Ecommerce:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Ecommerce/Entity'
+                prefix: 'App\Ecommerce\Entity'
+                alias: Ecommerce
         controller_resolver:
             auto_mapping: false
 

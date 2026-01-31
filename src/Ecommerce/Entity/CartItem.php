@@ -4,6 +4,7 @@ namespace App\Ecommerce\Entity;
 
 use App\Ecommerce\Repository\CartItemRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CartItemRepository::class)]
@@ -13,6 +14,7 @@ class CartItem
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['cart:read', 'cart:detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'cartItems')]
@@ -21,10 +23,12 @@ class CartItem
 
     #[ORM\ManyToOne(inversedBy: 'cartItems')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['cart:read', 'cart:detail'])]
     private ?Product $product = null;
 
     #[ORM\Column]
     #[Assert\Positive]
+    #[Groups(['cart:read', 'cart:detail', 'cart:write'])]
     private ?int $quantity = 1;
 
     #[ORM\Column]

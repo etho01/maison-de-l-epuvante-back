@@ -44,6 +44,9 @@ security:
         - { path: ^/api/verify, roles: PUBLIC_ACCESS }
         - { path: ^/api/reset-password-request, roles: PUBLIC_ACCESS }
         - { path: ^/api/users, roles: PUBLIC_ACCESS, methods: [POST] }
+        # E-commerce public routes (read-only)
+        - { path: ^/api/products, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/categories, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

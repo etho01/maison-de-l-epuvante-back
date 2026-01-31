@@ -5,6 +5,7 @@ namespace App\Ecommerce\Entity;
 use App\Ecommerce\Repository\OrderItemRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: OrderItemRepository::class)]
@@ -14,6 +15,7 @@ class OrderItem
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['order:read', 'order:detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'items')]
@@ -22,22 +24,28 @@ class OrderItem
 
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?Product $product = null;
 
     #[ORM\Column]
     #[Assert\Positive]
+    #[Groups(['order:read', 'order:detail'])]
     private ?int $quantity = 1;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $unitPrice = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $totalPrice = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $productName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['order:read', 'order:detail'])]
     private ?string $productSku = null;
 
     public function getId(): ?int
