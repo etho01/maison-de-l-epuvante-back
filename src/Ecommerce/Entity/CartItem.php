@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Ecommerce\Entity;
 
-use App\Repository\CartItemRepository;
+use App\Ecommerce\Repository\CartItemRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 

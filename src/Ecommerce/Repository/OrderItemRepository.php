@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Repository;
+namespace App\Ecommerce\Repository;
 
-use App\Entity\Category;
+use App\Ecommerce\Entity\OrderItem;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-class CategoryRepository extends ServiceEntityRepository
+class OrderItemRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Category::class);
+        parent::__construct($registry, OrderItem::class);
     }
 }

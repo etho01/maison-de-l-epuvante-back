@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace App\Ecommerce\Repository;
 
-use App\Entity\Cart;
+use App\Ecommerce\Entity\Cart;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

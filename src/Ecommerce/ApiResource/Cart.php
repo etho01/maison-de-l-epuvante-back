@@ -1,13 +1,13 @@
 <?php
 
-namespace App\ApiResource;
+namespace App\Ecommerce\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
-use App\Entity\Cart as CartEntity;
+use App\Ecommerce\Entity\Cart as CartEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(

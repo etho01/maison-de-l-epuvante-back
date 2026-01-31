@@ -1,13 +1,13 @@
 <?php
 
-namespace App\ApiResource;
+namespace App\Ecommerce\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
-use App\Entity\Order as OrderEntity;
+use App\Ecommerce\Entity\Order as OrderEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(

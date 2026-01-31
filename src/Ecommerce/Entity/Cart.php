@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace App\Ecommerce\Entity;
 
-use App\Repository\CartRepository;
+use App\Ecommerce\Repository\CartRepository;
+use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;

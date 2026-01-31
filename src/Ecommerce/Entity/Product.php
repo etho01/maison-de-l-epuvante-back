@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace App\Ecommerce\Entity;
 
-use App\Repository\ProductRepository;
+use App\Ecommerce\Repository\ProductRepository;
+use App\Entity\DigitalContent;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;

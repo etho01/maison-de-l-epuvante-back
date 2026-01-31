@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace App\Ecommerce\Entity;
 
-use App\Repository\OrderRepository;
+use App\Ecommerce\Repository\OrderRepository;
+use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\ApiResource;
+namespace App\Ecommerce\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
@@ -13,7 +13,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
-use App\Entity\Product as ProductEntity;
+use App\Ecommerce\Entity\Product as ProductEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(

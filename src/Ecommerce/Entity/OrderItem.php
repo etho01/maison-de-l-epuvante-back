@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Ecommerce\Entity;
 
-use App\Repository\OrderItemRepository;
+use App\Ecommerce\Repository\OrderItemRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;

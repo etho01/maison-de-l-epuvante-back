@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use App\Ecommerce\Entity\Cart;
+use App\Ecommerce\Entity\Order;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

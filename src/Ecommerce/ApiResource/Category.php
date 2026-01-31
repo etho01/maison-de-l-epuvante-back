@@ -1,6 +1,6 @@
 <?php
 
-namespace App\ApiResource;
+namespace App\Ecommerce\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
-use App\Entity\Category as CategoryEntity;
+use App\Ecommerce\Entity\Category as CategoryEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ApiResource(
