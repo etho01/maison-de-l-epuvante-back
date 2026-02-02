@@ -9,3 +9,13 @@ api_platform:
         stateless: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
+        pagination_enabled: true
+        pagination_items_per_page: 30
+        pagination_maximum_items_per_page: 100
+        pagination_client_enabled: true
+        pagination_client_items_per_page: true
+    collection:
+        pagination:
+            page_parameter_name: page
+            enabled_parameter_name: pagination
+            items_per_page_parameter_name: itemsPerPage

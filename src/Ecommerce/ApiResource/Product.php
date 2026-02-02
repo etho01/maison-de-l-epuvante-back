@@ -25,6 +25,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
         new Get(
             normalizationContext: ['groups' => ['product:read', 'product:detail']],
         ),
+        new Get(
+            uriTemplate: '/products/slug/{slug}',
+            normalizationContext: ['groups' => ['product:read', 'product:detail']],
+            provider: \App\Ecommerce\State\ProductBySlugProvider::class,
+        ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
             denormalizationContext: ['groups' => ['product:write']],
