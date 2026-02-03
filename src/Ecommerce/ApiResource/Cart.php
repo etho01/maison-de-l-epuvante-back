@@ -8,7 +8,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Entity\Cart as CartEntity;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\Ecommerce\State\CartProvider;
+use App\Ecommerce\State\CartProcessor;
 
 #[ApiResource(
     shortName: 'Cart',
@@ -44,6 +45,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     ],
     normalizationContext: ['groups' => ['cart:read']],
     denormalizationContext: ['groups' => ['cart:write']],
+    provider: CartProvider::class,
+    processor: CartProcessor::class,
 )]
 class Cart extends CartEntity
 {

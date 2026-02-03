@@ -8,7 +8,8 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use App\Ecommerce\Entity\Order as OrderEntity;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\Ecommerce\State\OrderProvider;
+use App\Ecommerce\State\OrderProcessor;
 
 #[ApiResource(
     shortName: 'Order',
@@ -35,6 +36,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['order:read']],
     denormalizationContext: ['groups' => ['order:write']],
     paginationEnabled: true,
+    provider: OrderProvider::class,
+    processor: OrderProcessor::class,
 )]
 class Order extends OrderEntity
 {

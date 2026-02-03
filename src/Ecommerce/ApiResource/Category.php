@@ -10,7 +10,8 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Entity\Category as CategoryEntity;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\Ecommerce\State\CategoryProvider;
+use App\Ecommerce\State\CategoryProcessor;
 
 #[ApiResource(
     shortName: 'Category',
@@ -40,6 +41,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['category:read']],
     denormalizationContext: ['groups' => ['category:write']],
     paginationEnabled: true,
+    provider: CategoryProvider::class,
+    processor: CategoryProcessor::class,
 )]
 class Category extends CategoryEntity
 {

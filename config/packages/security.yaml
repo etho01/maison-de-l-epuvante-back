@@ -47,6 +47,7 @@ security:
         # E-commerce public routes (read-only)
         - { path: ^/api/products, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/categories, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/subscription_plans, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

@@ -2,13 +2,6 @@
 
 namespace App\Ecommerce\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,35 +11,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ORM\Table(name: 'categories')]
-#[ApiResource(
-    shortName: 'Category',
-    operations: [
-        new GetCollection(
-            normalizationContext: ['groups' => ['category:read', 'category:list']],
-        ),
-        new Get(
-            normalizationContext: ['groups' => ['category:read', 'category:detail']],
-        ),
-        new Post(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['category:write']],
-        ),
-        new Put(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['category:write']],
-        ),
-        new Patch(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['category:write']],
-        ),
-        new Delete(
-            security: "is_granted('ROLE_ADMIN')",
-        ),
-    ],
-    normalizationContext: ['groups' => ['category:read']],
-    denormalizationContext: ['groups' => ['category:write']],
-    paginationEnabled: true,
-)]
 class Category
 {
     #[ORM\Id]

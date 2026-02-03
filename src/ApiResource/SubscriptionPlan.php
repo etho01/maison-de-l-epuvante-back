@@ -10,7 +10,8 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use App\Entity\SubscriptionPlan as SubscriptionPlanEntity;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\State\SubscriptionPlanProvider;
+use App\State\SubscriptionPlanProcessor;
 
 #[ApiResource(
     shortName: 'SubscriptionPlan',
@@ -40,6 +41,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['subscription_plan:read']],
     denormalizationContext: ['groups' => ['subscription_plan:write']],
     paginationEnabled: false,
+    provider: SubscriptionPlanProvider::class,
+    processor: SubscriptionPlanProcessor::class,
 )]
 class SubscriptionPlan extends SubscriptionPlanEntity
 {

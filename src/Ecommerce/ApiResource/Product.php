@@ -14,7 +14,8 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Entity\Product as ProductEntity;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\Ecommerce\State\ProductProvider;
+use App\Ecommerce\State\ProductProcessor;
 
 #[ApiResource(
     shortName: 'Product',
@@ -23,12 +24,14 @@ use Symfony\Component\Serializer\Annotation\Groups;
             normalizationContext: ['groups' => ['product:read', 'product:list']],
         ),
         new Get(
+            uriTemplate: '/products/{id}',
             normalizationContext: ['groups' => ['product:read', 'product:detail']],
         ),
         new Get(
             uriTemplate: '/products/slug/{slug}',
+            controller: \App\Ecommerce\Controller\GetProductBySlugController::class,
             normalizationContext: ['groups' => ['product:read', 'product:detail']],
-            provider: \App\Ecommerce\State\ProductBySlugProvider::class,
+            read: false,
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
@@ -49,6 +52,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
     normalizationContext: ['groups' => ['product:read']],
     denormalizationContext: ['groups' => ['product:write']],
     paginationEnabled: true,
+    provider: ProductProvider::class,
+    processor: ProductProcessor::class,
 )]
 #[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'type' => 'exact', 'category.id' => 'exact'])]
 #[ApiFilter(RangeFilter::class, properties: ['price'])]

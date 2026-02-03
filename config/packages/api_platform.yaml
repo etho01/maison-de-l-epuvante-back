@@ -3,8 +3,10 @@ api_platform:
     version: 1.0.0
     mapping:
         paths:
+            - '%kernel.project_dir%/src/Entity'
             - '%kernel.project_dir%/src/ApiResource'
             - '%kernel.project_dir%/src/Ecommerce/ApiResource'
+            - '%kernel.project_dir%/src/Ecommerce/Entity'
     defaults:
         stateless: true
         cache_headers:

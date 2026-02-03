@@ -2,17 +2,6 @@
 
 namespace App\Ecommerce\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
-use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Delete;
 use App\Ecommerce\Repository\ProductRepository;
 use App\Entity\DigitalContent;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,38 +13,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ORM\Table(name: 'products')]
-#[ApiResource(
-    shortName: 'Product',
-    operations: [
-        new GetCollection(
-            normalizationContext: ['groups' => ['product:read', 'product:list']],
-        ),
-        new Get(
-            normalizationContext: ['groups' => ['product:read', 'product:detail']],
-        ),
-        new Post(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['product:write']],
-        ),
-        new Put(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['product:write']],
-        ),
-        new Patch(
-            security: "is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['product:write']],
-        ),
-        new Delete(
-            security: "is_granted('ROLE_ADMIN')",
-        ),
-    ],
-    normalizationContext: ['groups' => ['product:read']],
-    denormalizationContext: ['groups' => ['product:write']],
-    paginationEnabled: true,
-)]
-#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'type' => 'exact', 'category.id' => 'exact'])]
-#[ApiFilter(RangeFilter::class, properties: ['price'])]
-#[ApiFilter(BooleanFilter::class, properties: ['active', 'exclusiveOnline'])]
 class Product
 {
     #[ORM\Id]
