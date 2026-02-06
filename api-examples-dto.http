@@ -1,0 +1,391 @@
+### ========================================
+### GESTION DES CATÉGORIES (avec validation DTO)
+### ========================================
+
+### Créer une catégorie (ADMIN)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Vêtements gothiques",
+  "slug": "vetements-gothiques",
+  "description": "Toute notre collection de vêtements gothiques"
+}
+
+### Créer une catégorie (validation - nom trop court)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "V",
+  "slug": "v"
+}
+
+### Créer une catégorie (validation - slug invalide avec majuscules)
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Accessoires",
+  "slug": "ACCESSOIRES-INVALIDES"
+}
+
+### Mettre à jour une catégorie (ADMIN)
+PUT {{baseUrl}}/api/categories/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Vêtements gothiques premium",
+  "description": "Notre collection premium de vêtements gothiques"
+}
+
+### Obtenir toutes les catégories
+GET {{baseUrl}}/api/categories
+Accept: application/json
+
+### Obtenir une catégorie
+GET {{baseUrl}}/api/categories/1
+Accept: application/json
+
+### Supprimer une catégorie (ADMIN)
+DELETE {{baseUrl}}/api/categories/1
+Authorization: Bearer {{adminToken}}
+
+
+### ========================================
+### GESTION DES PRODUITS (avec validation DTO)
+### ========================================
+
+### Créer un produit (ADMIN)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "T-shirt noir à tête de mort",
+  "slug": "t-shirt-noir-tete-de-mort",
+  "description": "T-shirt en coton avec impression tête de mort",
+  "price": 29.99,
+  "stock": 50,
+  "type": "physical",
+  "categoryId": 1,
+  "sku": "TS-001",
+  "active": true,
+  "exclusiveOnline": false,
+  "images": [
+    "https://example.com/images/tshirt1.jpg",
+    "https://example.com/images/tshirt2.jpg"
+  ],
+  "weight": 0.2,
+  "metadata": {
+    "material": "100% coton",
+    "sizes": ["S", "M", "L", "XL"]
+  }
+}
+
+### Créer un produit (validation - prix négatif)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Produit test",
+  "slug": "produit-test",
+  "price": -10.50,
+  "stock": 10,
+  "type": "physical"
+}
+
+### Créer un produit (validation - stock négatif)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Produit test",
+  "slug": "produit-test",
+  "price": 29.99,
+  "stock": -5,
+  "type": "physical"
+}
+
+### Créer un produit (validation - type invalide)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Produit test",
+  "slug": "produit-test",
+  "price": 29.99,
+  "stock": 10,
+  "type": "invalid_type"
+}
+
+### Mettre à jour un produit (ADMIN)
+PUT {{baseUrl}}/api/products/1
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "T-shirt noir à tête de mort - Édition limitée",
+  "price": 34.99,
+  "stock": 25
+}
+
+### Obtenir tous les produits
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+### Obtenir un produit par ID
+GET {{baseUrl}}/api/products/1
+Accept: application/json
+
+### Obtenir un produit par slug
+GET {{baseUrl}}/api/products/slug/t-shirt-noir-tete-de-mort
+Accept: application/json
+
+### Filtrer les produits par catégorie
+GET {{baseUrl}}/api/products?category.id=1
+Accept: application/json
+
+### Filtrer les produits par type
+GET {{baseUrl}}/api/products?type=physical
+Accept: application/json
+
+### Filtrer par prix
+GET {{baseUrl}}/api/products?price[gte]=20&price[lte]=50
+Accept: application/json
+
+
+### ========================================
+### GESTION DES UTILISATEURS (avec validation DTO)
+### ========================================
+
+### Créer un utilisateur (inscription)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "nouveau@example.com",
+  "password": "Password123",
+  "firstName": "Jean",
+  "lastName": "Dupont"
+}
+
+### Créer un utilisateur (validation - email invalide)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "email-invalide",
+  "password": "Password123",
+  "firstName": "Jean"
+}
+
+### Créer un utilisateur (validation - mot de passe trop court)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Pass1",
+  "firstName": "Jean"
+}
+
+### Créer un utilisateur (validation - mot de passe sans majuscule)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "firstName": "Jean"
+}
+
+### Mettre à jour l'utilisateur actuel
+POST {{baseUrl}}/api/users/1/update
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "firstName": "Jean-Pierre",
+  "lastName": "Martin"
+}
+
+
+### ========================================
+### GESTION DES COMMANDES (avec validation DTO)
+### ========================================
+
+### Créer une commande
+POST {{baseUrl}}/api/orders/create
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "status": "pending",
+  "shippingAddress": "123 Rue de Paris, 75001 Paris, France",
+  "billingAddress": "123 Rue de Paris, 75001 Paris, France",
+  "paymentMethod": "credit_card"
+}
+
+### Créer une commande (validation - adresse manquante)
+POST {{baseUrl}}/api/orders/create
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "status": "pending",
+  "paymentMethod": "credit_card"
+}
+
+### Créer une commande (validation - statut invalide)
+POST {{baseUrl}}/api/orders/create
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "status": "invalid_status",
+  "shippingAddress": "123 Rue de Paris",
+  "billingAddress": "123 Rue de Paris"
+}
+
+### Obtenir toutes les commandes de l'utilisateur
+GET {{baseUrl}}/api/orders
+Accept: application/json
+Authorization: Bearer {{userToken}}
+
+### Obtenir une commande spécifique
+GET {{baseUrl}}/api/orders/1
+Accept: application/json
+Authorization: Bearer {{userToken}}
+
+
+### ========================================
+### GESTION DES ABONNEMENTS (avec validation DTO)
+### ========================================
+
+### Créer un plan d'abonnement (ADMIN)
+POST {{baseUrl}}/api/subscription-plans/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Abonnement Premium",
+  "description": "Accès illimité à tous les contenus premium",
+  "price": 9.99,
+  "duration": 1,
+  "durationUnit": "month",
+  "active": true,
+  "features": [
+    "Accès illimité aux vidéos",
+    "Téléchargements illimités",
+    "Support prioritaire"
+  ]
+}
+
+### Créer un plan (validation - prix négatif)
+POST {{baseUrl}}/api/subscription-plans/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Plan test",
+  "price": -5.99,
+  "duration": 1,
+  "durationUnit": "month"
+}
+
+### Créer un plan (validation - durée invalide)
+POST {{baseUrl}}/api/subscription-plans/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Plan test",
+  "price": 9.99,
+  "duration": 500,
+  "durationUnit": "month"
+}
+
+### Créer un abonnement
+POST {{baseUrl}}/api/subscriptions/create
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "planId": 1,
+  "status": "active",
+  "autoRenew": true
+}
+
+### Créer un abonnement (validation - planId manquant)
+POST {{baseUrl}}/api/subscriptions/create
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "status": "active"
+}
+
+### Obtenir tous les abonnements
+GET {{baseUrl}}/api/subscriptions
+Accept: application/json
+Authorization: Bearer {{userToken}}
+
+### Obtenir tous les plans d'abonnement
+GET {{baseUrl}}/api/subscription_plans
+Accept: application/json
+
+
+### ========================================
+### GESTION DES CONTENUS NUMÉRIQUES (avec validation DTO)
+### ========================================
+
+### Créer un contenu numérique (ADMIN)
+POST {{baseUrl}}/api/digital-contents/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Tutoriel vidéo - Maquillage gothique",
+  "description": "Tutoriel complet pour un maquillage gothique réussi",
+  "filePath": "/storage/videos/tutorial-maquillage-gothique.mp4",
+  "contentType": "video",
+  "fileSize": 524288000,
+  "requiresSubscription": true,
+  "subscriptionPlanId": 1
+}
+
+### Créer un contenu (validation - contentType invalide)
+POST {{baseUrl}}/api/digital-contents/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Contenu test",
+  "filePath": "/storage/test.pdf",
+  "contentType": "invalid_type",
+  "fileSize": 1024
+}
+
+### Créer un contenu (validation - nom trop court)
+POST {{baseUrl}}/api/digital-contents/create
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "AB",
+  "filePath": "/storage/test.pdf",
+  "contentType": "document"
+}
+
+### Variables
+@baseUrl = http://localhost:8000
+@adminToken = YOUR_ADMIN_TOKEN_HERE
+@userToken = YOUR_USER_TOKEN_HERE

@@ -1,0 +1,143 @@
+### Test du service de pagination
+
+# Catégories - Page 1 par défaut (30 éléments)
+GET http://localhost:8000/api/categories
+Accept: application/json
+
+###
+
+# Catégories - TOUS les éléments (pagination désactivée)
+GET http://localhost:8000/api/categories?pagination=false
+Accept: application/json
+
+###
+
+# Catégories - Page 1 avec 5 éléments
+GET http://localhost:8000/api/categories?page=1&itemsPerPage=5
+Accept: application/json
+
+###
+
+# Catégories - Page 2 avec 5 éléments
+GET http://localhost:8000/api/categories?page=2&itemsPerPage=5
+Accept: application/json
+
+###
+
+# Produits - Page 1 par défaut
+GET http://localhost:8000/api/products
+Accept: application/json
+
+###
+
+# Produits - TOUS les éléments sans pagination
+GET http://localhost:8000/api/products?pagination=false
+Accept: application/json
+
+###
+
+# Produits - Page 1 avec 10 éléments
+GET http://localhost:8000/api/products?page=1&itemsPerPage=10
+Accept: application/json
+
+###
+
+# Utilisateurs - Page 1 (nécessite ROLE_ADMIN)
+GET http://localhost:8000/api/users
+Accept: application/json
+Authorization: Bearer {{admin_token}}
+
+###
+
+# Utilisateurs - TOUS les utilisateurs sans pagination
+GET http://localhost:8000/api/users?pagination=false
+Accept: application/json
+Authorization: Bearer {{admin_token}}
+
+###
+
+# Plans d'abonnement - Page 1 avec 20 éléments
+GET http://localhost:8000/api/subscription_plans?page=1&itemsPerPage=20
+Accept: application/json
+
+###
+
+# Plans d'abonnement - TOUS sans pagination
+GET http://localhost:8000/api/subscription_plans?pagination=false
+Accept: application/json
+
+###
+
+# Commandes - Page 1 (filtrées par utilisateur connecté)
+GET http://localhost:8000/api/orders
+Accept: application/json
+Authorization: Bearer {{user_token}}
+
+###
+
+# Commandes - TOUTES les commandes de l'utilisateur sans pagination
+GET http://localhost:8000/api/orders?pagination=false
+Accept: application/json
+Authorization: Bearer {{user_token}}
+
+###
+
+# Abonnements - Page 1 (filtrés par utilisateur connecté)
+GET http://localhost:8000/api/subscriptions
+Accept: application/json
+Authorization: Bearer {{user_token}}
+
+###
+
+# Abonnements - TOUS les abonnements sans pagination
+GET http://localhost:8000/api/subscriptions?pagination=false
+Accept: application/json
+Authorization: Bearer {{user_token}}
+
+###
+
+# Contenus numériques - Page 1
+GET http://localhost:8000/api/digital_contents
+Accept: application/json
+
+###
+
+# Contenus numériques - TOUS sans pagination
+GET http://localhost:8000/api/digital_contents?pagination=false
+Accept: application/json
+
+###
+
+# Test limite max (100 éléments par page)
+GET http://localhost:8000/api/products?itemsPerPage=100
+Accept: application/json
+
+###
+
+# Test valeur supérieure à 100 (sera limitée à 100)
+GET http://localhost:8000/api/products?itemsPerPage=200
+Accept: application/json
+
+###
+
+# Test page négative (sera corrigée à 1)
+GET http://localhost:8000/api/categories?page=-5
+Accept: application/json
+
+###
+
+# Test itemsPerPage négatif (sera corrigé à 1)
+GET http://localhost:8000/api/categories?itemsPerPage=-10
+Accept: application/json
+
+###
+
+# Test pagination=0 (désactivée aussi)
+GET http://localhost:8000/api/categories?pagination=0
+Accept: application/json
+
+###
+
+# Test pagination=1 (activée)
+GET http://localhost:8000/api/categories?pagination=1
+Accept: application/json

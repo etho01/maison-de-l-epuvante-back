@@ -7,6 +7,7 @@ use App\Repository\DigitalContentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: DigitalContentRepository::class)]
 #[ORM\Table(name: 'digital_contents')]
@@ -15,38 +16,49 @@ class DigitalContent
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['digital_content:read', 'digital_content:list', 'digital_content:detail'])]
     private ?int $id = null;
 
     #[ORM\OneToOne(inversedBy: 'digitalContent')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['digital_content:read', 'digital_content:detail'])]
     private ?Product $product = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: ['fanzine', 'ebook', 'video', 'audio', 'other'])]
+    #[Groups(['digital_content:read', 'digital_content:list', 'digital_content:detail', 'digital_content:write'])]
     private ?string $contentType = 'fanzine';
 
     #[ORM\Column(length: 500)]
+    #[Groups(['digital_content:read', 'digital_content:detail'])]
     private ?string $filePath = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:list', 'digital_content:detail', 'digital_content:write'])]
     private ?string $fileName = null;
 
     #[ORM\Column(type: Types::BIGINT, nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:detail'])]
     private ?string $fileSize = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:detail'])]
     private ?string $mimeType = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:list', 'digital_content:detail', 'digital_content:write'])]
     private ?int $issueNumber = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:list', 'digital_content:detail', 'digital_content:write'])]
     private ?int $pageCount = null;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['digital_content:read', 'digital_content:detail', 'digital_content:write'])]
     private ?array $metadata = [];
 
     #[ORM\Column]
+    #[Groups(['digital_content:read', 'digital_content:detail', 'digital_content:write'])]
     private ?bool $requiresSubscription = false;
 
     #[ORM\Column]

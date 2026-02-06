@@ -7,9 +7,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
-use App\Ecommerce\Entity\Cart as CartEntity;
-use App\Ecommerce\State\CartProvider;
-use App\Ecommerce\State\CartProcessor;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'Cart',
@@ -17,37 +15,56 @@ use App\Ecommerce\State\CartProcessor;
         new Get(
             uriTemplate: '/cart/me',
             security: "is_granted('ROLE_USER')",
-            normalizationContext: ['groups' => ['cart:read', 'cart:detail']],
-            name: 'api_cart_me',
+            normalizationContext: ['groups' => ['cart:read']],
         ),
         new Post(
             uriTemplate: '/cart/items',
             security: "is_granted('ROLE_USER')",
-            denormalizationContext: ['groups' => ['cart:write']],
-            name: 'api_cart_add_item',
+            denormalizationContext: ['groups' => ['cart:add']],
         ),
         new Patch(
             uriTemplate: '/cart/items/{itemId}',
             security: "is_granted('ROLE_USER')",
-            denormalizationContext: ['groups' => ['cart:write']],
-            name: 'api_cart_update_item',
+            denormalizationContext: ['groups' => ['cart:update']],
         ),
         new Delete(
             uriTemplate: '/cart/items/{itemId}',
             security: "is_granted('ROLE_USER')",
-            name: 'api_cart_remove_item',
         ),
         new Delete(
             uriTemplate: '/cart/clear',
             security: "is_granted('ROLE_USER')",
-            name: 'api_cart_clear',
         ),
     ],
+    formats: ['json' => ['application/json'], 'jsonld' => ['application/ld+json']],
     normalizationContext: ['groups' => ['cart:read']],
     denormalizationContext: ['groups' => ['cart:write']],
-    provider: CartProvider::class,
-    processor: CartProcessor::class,
 )]
-class Cart extends CartEntity
+class Cart
 {
+    public ?int $id = null;
+
+    public ?int $userId = null;
+
+    #[Assert\NotBlank(message: 'L\'ID du produit est requis', groups: ['cart:add'])]
+    #[Assert\Positive(message: 'L\'ID du produit doit être positif', groups: ['cart:add'])]
+    public ?int $productId = null;
+
+    #[Assert\NotBlank(message: 'La quantité est requise', groups: ['cart:add', 'cart:update'])]
+    #[Assert\Positive(message: 'La quantité doit être positive', groups: ['cart:add', 'cart:update'])]
+    #[Assert\Range(
+        min: 1,
+        max: 1000,
+        notInRangeMessage: 'La quantité doit être entre {{ min }} et {{ max }}',
+        groups: ['cart:add', 'cart:update']
+    )]
+    public int $quantity = 1;
+
+    public array $items = [];
+
+    public ?float $totalAmount = 0.0;
+
+    public ?\DateTimeImmutable $createdAt = null;
+
+    public ?\DateTimeImmutable $updatedAt = null;
 }

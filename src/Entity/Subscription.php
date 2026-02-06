@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\SubscriptionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: SubscriptionRepository::class)]
 #[ORM\Table(name: 'subscriptions')]
@@ -13,30 +14,38 @@ class Subscription
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['subscription:read', 'subscription:list', 'subscription:detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'subscriptions')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['subscription:read', 'subscription:detail'])]
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'subscriptions')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['subscription:read', 'subscription:list', 'subscription:detail'])]
     private ?SubscriptionPlan $plan = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: ['active', 'cancelled', 'expired', 'pending'])]
+    #[Groups(['subscription:read', 'subscription:list', 'subscription:detail', 'subscription:write'])]
     private ?string $status = 'pending';
 
     #[ORM\Column]
+    #[Groups(['subscription:read', 'subscription:detail'])]
     private ?\DateTimeImmutable $startDate = null;
 
     #[ORM\Column]
+    #[Groups(['subscription:read', 'subscription:detail'])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['subscription:read', 'subscription:detail'])]
     private ?\DateTimeImmutable $cancelledAt = null;
 
     #[ORM\Column]
+    #[Groups(['subscription:read', 'subscription:detail', 'subscription:write'])]
     private ?bool $autoRenew = true;
 
     #[ORM\Column(length: 255, nullable: true)]

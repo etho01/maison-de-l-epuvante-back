@@ -9,46 +9,52 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
+use App\Ecommerce\State\CategoryProvider;
+use App\Ecommerce\State\CategoryProcessor;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'Category',
     operations: [
         new GetCollection(
-            controller: \App\Ecommerce\Controller\GetCategoriesController::class,
             normalizationContext: ['groups' => ['category:read', 'category:list']],
         ),
         new Get(
-            controller: \App\Ecommerce\Controller\GetCategoryController::class,
             normalizationContext: ['groups' => ['category:read', 'category:detail']],
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
             controller: \App\Ecommerce\Controller\CreateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
+            read: false
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN')",
             controller: \App\Ecommerce\Controller\UpdateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
+            read: false
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
             controller: \App\Ecommerce\Controller\UpdateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
+            read: false
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\DeleteCategoryController::class,
         ),
     ],
     formats: ['json' => ['application/json'], 'jsonld' => ['application/ld+json']],
     normalizationContext: ['groups' => ['category:read']],
     denormalizationContext: ['groups' => ['category:write']],
     paginationEnabled: true,
+    provider: CategoryProvider::class,
+    processor: CategoryProcessor::class,
 )]
 class Category
 {
+    #[Groups(['category:read', 'category:list', 'category:detail', 'product:read'])]
     public ?int $id = null;
 
     #[Assert\NotBlank(message: 'Le nom de la catégorie est requis', groups: ['category:write'])]
@@ -59,9 +65,11 @@ class Category
         maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères',
         groups: ['category:write']
     )]
+    #[Groups(['category:read', 'category:list', 'category:detail', 'category:write', 'product:read'])]
     public ?string $name = null;
 
     #[Assert\Length(max: 2000, maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères', groups: ['category:write'])]
+    #[Groups(['category:read', 'category:detail', 'category:write'])]
     public ?string $description = null;
 
     #[Assert\NotBlank(message: 'Le slug est requis', groups: ['category:write'])]
@@ -77,11 +85,15 @@ class Category
         message: 'Le slug doit être en minuscules avec des tirets uniquement',
         groups: ['category:write']
     )]
+    #[Groups(['category:read', 'category:list', 'category:detail', 'category:write'])]
     public ?string $slug = null;
 
+    #[Groups(['category:write'])]
     public ?int $parentId = null;
 
+    #[Groups(['category:read', 'category:detail'])]
     public ?\DateTimeImmutable $createdAt = null;
 
+    #[Groups(['category:read', 'category:detail'])]
     public ?\DateTimeImmutable $updatedAt = null;
 }
