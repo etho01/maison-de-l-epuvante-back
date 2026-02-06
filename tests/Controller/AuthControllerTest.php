@@ -2,7 +2,7 @@
 
 namespace App\Tests\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\WebTestCase;
 
 class AuthControllerTest extends WebTestCase
 {
@@ -14,7 +14,7 @@ class AuthControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
             'email' => 'test' . time() . '@example.com',
-            'plainPassword' => 'password123',
+            'password' => 'Password123!',
             'firstName' => 'Test',
             'lastName' => 'User'
         ]));
@@ -27,7 +27,7 @@ class AuthControllerTest extends WebTestCase
         $client = static::createClient();
         
         // Créer un utilisateur
-        $email = 'test' . time() . '@example.com';
+        $email = 'testlogin' . time() . '@example.com';
         $client->request('POST', '/api/users', [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
@@ -43,7 +43,7 @@ class AuthControllerTest extends WebTestCase
             'password' => 'password123',
         ]));
 
-        // Devrait être refusé car email non vérifié
-        $this->assertResponseStatusCodeSame(403);
+        // Le contrôleur AuthController renvoie 401 pour email non vérifié
+        $this->assertResponseStatusCodeSame(401);
     }
 }

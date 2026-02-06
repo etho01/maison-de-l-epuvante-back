@@ -185,4 +185,14 @@ class Category
         $this->updatedAt = $updatedAt;
         return $this;
     }
+
+    public function hasParent(): bool
+    {
+        return $this->parent !== null;
+    }
+
+    public function hasChildren(): bool
+    {
+        return !$this->children->isEmpty();
+    }
 }

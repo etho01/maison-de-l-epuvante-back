@@ -183,4 +183,29 @@ class Subscription
         return $this->status === 'active' && 
                $this->endDate > new \DateTimeImmutable();
     }
+
+    public function isExpired(): bool
+    {
+        return $this->status === 'expired' || 
+               ($this->endDate !== null && $this->endDate <= new \DateTimeImmutable());
+    }
+
+    public function cancel(): static
+    {
+        $this->status = 'cancelled';
+        $this->cancelledAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function activate(): static
+    {
+        $this->status = 'active';
+        return $this;
+    }
+
+    public function expire(): static
+    {
+        $this->status = 'expired';
+        return $this;
+    }
 }

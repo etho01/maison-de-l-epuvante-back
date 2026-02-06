@@ -348,4 +348,39 @@ class Product
         $this->metadata = $metadata;
         return $this;
     }
+
+    public function isPhysical(): bool
+    {
+        return $this->type === 'physical';
+    }
+
+    public function isDigital(): bool
+    {
+        return $this->type === 'digital';
+    }
+
+    public function isSubscription(): bool
+    {
+        return $this->type === 'subscription';
+    }
+
+    public function isInStock(): bool
+    {
+        return $this->stock > 0;
+    }
+
+    public function decreaseStock(int $quantity): static
+    {
+        $this->stock -= $quantity;
+        if ($this->stock < 0) {
+            $this->stock = 0;
+        }
+        return $this;
+    }
+
+    public function increaseStock(int $quantity): static
+    {
+        $this->stock += $quantity;
+        return $this;
+    }
 }

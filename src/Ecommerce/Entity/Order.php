@@ -319,4 +319,56 @@ class Order
         $this->updatedAt = $updatedAt;
         return $this;
     }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid';
+    }
+
+    public function isShipped(): bool
+    {
+        return $this->status === 'shipped';
+    }
+
+    public function isDelivered(): bool
+    {
+        return $this->status === 'delivered';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
+    }
+
+    public function markAsPaid(): static
+    {
+        $this->status = 'paid';
+        $this->paidAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function markAsShipped(): static
+    {
+        $this->status = 'shipped';
+        $this->shippedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function markAsDelivered(): static
+    {
+        $this->status = 'delivered';
+        $this->deliveredAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    public function cancel(): static
+    {
+        $this->status = 'cancelled';
+        return $this;
+    }
 }

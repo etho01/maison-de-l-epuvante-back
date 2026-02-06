@@ -200,6 +200,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function setIsVerified(bool $isVerified): static
+    {
+        return $this->setVerified($isVerified);
+    }
+
+    public function getFullName(): string
+    {
+        $parts = array_filter([$this->firstName, $this->lastName]);
+        return implode(' ', $parts);
+    }
+
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;

@@ -115,4 +115,20 @@ class Cart
         $this->updatedAt = $updatedAt;
         return $this;
     }
+
+    public function clear(): static
+    {
+        $this->items->clear();
+        return $this;
+    }
+
+    public function getItemsCount(): int
+    {
+        return $this->items->count();
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->items->isEmpty();
+    }
 }

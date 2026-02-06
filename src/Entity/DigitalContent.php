@@ -182,10 +182,35 @@ class DigitalContent
         return $this->requiresSubscription;
     }
 
+    public function isRequiresSubscription(): ?bool
+    {
+        return $this->requiresSubscription;
+    }
+
     public function setRequiresSubscription(bool $requiresSubscription): static
     {
         $this->requiresSubscription = $requiresSubscription;
         return $this;
+    }
+
+    public function isFanzine(): bool
+    {
+        return $this->contentType === 'fanzine';
+    }
+
+    public function isEbook(): bool
+    {
+        return $this->contentType === 'ebook';
+    }
+
+    public function isVideo(): bool
+    {
+        return $this->contentType === 'video';
+    }
+
+    public function isAudio(): bool
+    {
+        return $this->contentType === 'audio';
     }
 
     public function getCreatedAt(): ?\DateTimeImmutable
