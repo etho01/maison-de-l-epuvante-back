@@ -19,18 +19,9 @@ Documentation technique de l'implémentation complète du système e-commerce.
 - Images multiples (JSON)
 - Exclusivité web (flag)
 - Métadonnées extensibles
-- Relations: `Category`, `OrderItem[]`, `CartItem[]`, `DigitalContent`
+- Relations: `Category`, `OrderItem[]`, `DigitalContent`
 
-#### 3. **Cart** (Panier)
-- Un panier par utilisateur (OneToOne)
-- Méthode `getTotal()` calculée
-- Relations: `User`, `CartItem[]`
-
-#### 4. **CartItem** (Articles du panier)
-- Quantité par produit
-- Relations: `Cart`, `Product`
-
-#### 5. **Order** (Commandes)
+#### 3. **Order** (Commandes)
 - Numéro de commande unique auto-généré
 - Statuts: pending, processing, paid, shipped, delivered, cancelled, refunded
 - Adresses de livraison et facturation (JSON)
@@ -72,8 +63,6 @@ Tous les repositories avec méthodes de recherche personnalisées:
 
 - `CategoryRepository`
 - `ProductRepository` - `findActiveProducts()`, `findByCategory()`
-- `CartRepository`
-- `CartItemRepository`
 - `OrderRepository` - `findByUser()`
 - `OrderItemRepository`
 - `DigitalContentRepository`
@@ -96,13 +85,6 @@ GET  /api/subscription-plans/{id}
 
 ### Routes Utilisateur (ROLE_USER)
 ```
-# Panier
-GET    /api/cart/me
-POST   /api/cart/items
-PATCH  /api/cart/items/{itemId}
-DELETE /api/cart/items/{itemId}
-DELETE /api/cart/clear
-
 # Commandes
 GET  /api/orders
 GET  /api/orders/{id}

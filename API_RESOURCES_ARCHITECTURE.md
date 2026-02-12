@@ -56,13 +56,6 @@ Plus besoin de fichiers séparés comme UserManagement.php. Tout est centralisé
 - Filtres : SearchFilter, RangeFilter, BooleanFilter
 - Formats : JSON + JSON-LD
 
-#### ✅ Cart.php
-- Classe autonome sans héritage
-- Validation intégrée (productId, quantity)
-- Routes : GET /cart/me, POST /cart/items, PATCH /cart/items/{itemId}, DELETE
-- State Provider/Processor
-- Formats : JSON + JSON-LD
-
 #### ✅ Order.php
 - Classe autonome sans héritage
 - Validation intégrée (status, addresses, payment)
@@ -140,7 +133,6 @@ src/
 ├── Ecommerce/ApiResource/
 │   ├── Category.php                ← API Resource autonome avec validation
 │   ├── Product.php                 ← API Resource autonome avec validation
-│   ├── Cart.php                    ← API Resource autonome avec validation
 │   └── Order.php                   ← API Resource autonome avec validation
 │
 ├── Controller/
@@ -166,7 +158,6 @@ src/
 └── Ecommerce/Entity/              ← Entités Ecommerce (inchangées)
     ├── Category.php
     ├── Product.php
-    ├── Cart.php
     └── Order.php
 ```
 
@@ -188,13 +179,6 @@ src/
 - `PUT /api/products/{id}` - Mettre à jour complète (ADMIN, validation)
 - `PATCH /api/products/{id}` - Mise à jour partielle (ADMIN, validation)
 - `DELETE /api/products/{id}` - Supprimer (ADMIN)
-
-### Panier
-- `GET /api/cart/me` - Mon panier (USER)
-- `POST /api/cart/items` - Ajouter un article (USER, validation)
-- `PATCH /api/cart/items/{itemId}` - Modifier quantité (USER, validation)
-- `DELETE /api/cart/items/{itemId}` - Retirer article (USER)
-- `DELETE /api/cart/clear` - Vider le panier (USER)
 
 ### Commandes
 - `GET /api/orders` - Mes commandes (USER)

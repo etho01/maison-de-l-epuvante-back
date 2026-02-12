@@ -18,12 +18,12 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product:read', 'product:list', 'product:detail', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'order:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
-    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'order:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -38,7 +38,7 @@ class Product
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotBlank]
     #[Assert\Positive]
-    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'order:read'])]
     private ?string $price = null;
 
     #[ORM\Column]
@@ -75,11 +75,7 @@ class Product
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: OrderItem::class)]
     private Collection $orderItems;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: CartItem::class, orphanRemoval: true)]
-    private Collection $cartItems;
-
-    #[ORM\OneToOne(mappedBy: 'product', cascade: ['persist', 'remove'])]
-    private ?DigitalContent $digitalContent = null;
+    #[ORM\OneToOne(mappedBy: 'product', cascade: ['persist', 'remove'])]    private ?DigitalContent $digitalContent = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -97,7 +93,6 @@ class Product
     public function __construct()
     {
         $this->orderItems = new ArrayCollection();
-        $this->cartItems = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -251,35 +246,6 @@ class Product
         if ($this->orderItems->removeElement($orderItem)) {
             if ($orderItem->getProduct() === $this) {
                 $orderItem->setProduct(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, CartItem>
-     */
-    public function getCartItems(): Collection
-    {
-        return $this->cartItems;
-    }
-
-    public function addCartItem(CartItem $cartItem): static
-    {
-        if (!$this->cartItems->contains($cartItem)) {
-            $this->cartItems->add($cartItem);
-            $cartItem->setProduct($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCartItem(CartItem $cartItem): static
-    {
-        if ($this->cartItems->removeElement($cartItem)) {
-            if ($cartItem->getProduct() === $this) {
-                $cartItem->setProduct(null);
             }
         }
 

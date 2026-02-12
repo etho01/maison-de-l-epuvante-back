@@ -68,7 +68,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiFilter(BooleanFilter::class, properties: ['active', 'exclusiveOnline'])]
 class Product
 {
-    #[Groups(['product:read', 'product:list', 'product:detail', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'order:read'])]
     public ?int $id = null;
 
     #[Assert\NotBlank(message: 'Le nom du produit est requis', groups: ['product:write'])]
@@ -79,7 +79,7 @@ class Product
         maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères',
         groups: ['product:write']
     )]
-    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'order:read'])]
     public ?string $name = null;
 
     #[Assert\Length(max: 5000, maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères', groups: ['product:write'])]
@@ -103,7 +103,7 @@ class Product
         notInRangeMessage: 'Le prix doit être entre {{ min }} et {{ max }}',
         groups: ['product:write']
     )]
-    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'cart:read', 'order:read'])]
+    #[Groups(['product:read', 'product:list', 'product:detail', 'product:write', 'order:read'])]
     public ?float $price = null;
 
     #[Assert\NotNull(message: 'Le stock est requis', groups: ['product:write'])]

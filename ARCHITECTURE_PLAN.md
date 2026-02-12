@@ -79,7 +79,6 @@ Les #[Groups] ont été ajoutés dans :
 Pour CHAQUE API Resource dans :
 - src/Ecommerce/ApiResource/Category.php
 - src/Ecommerce/ApiResource/Product.php
-- src/Ecommerce/ApiResource/Cart.php
 - src/Ecommerce/ApiResource/Order.php
 - src/ApiResource/User.php
 - src/ApiResource/Subscription.php
