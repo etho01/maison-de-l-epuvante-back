@@ -88,6 +88,7 @@ class Product
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    #[Groups(['product:read', 'product:detail', 'product:write'])]
     private ?string $weight = null;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]

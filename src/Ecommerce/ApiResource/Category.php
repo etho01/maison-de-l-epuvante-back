@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             controller: \App\Ecommerce\Controller\GetCategoriesController::class,
-            normalizationContext: ['groups' => ['category:read', 'category:list']],
+            normalizationContext: ['groups' => ['category:read', 'category:list', 'parent', 'parent:read']],
         ),
         new Get(
             controller: \App\Ecommerce\Controller\GetCategoryController::class,

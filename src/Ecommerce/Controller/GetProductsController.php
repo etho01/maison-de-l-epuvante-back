@@ -27,6 +27,6 @@ class GetProductsController extends AbstractController
         $queryBuilder = $this->productRepository->createQueryBuilder('p');
         $result = $this->paginationService->paginate($queryBuilder, $page, $itemsPerPage, $enablePagination);
 
-        return $this->json($result, 200, [], ['groups' => ['product:read', 'product:list']]);
+        return $this->json($result, 200, [], ['groups' => ['product:read', 'product:list', ]]);
     }
 }

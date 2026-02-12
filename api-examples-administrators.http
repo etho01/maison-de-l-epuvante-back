@@ -1,0 +1,205 @@
+# CRUD Administrateurs
+
+Ce fichier contient des exemples d'utilisation de l'API pour gérer les administrateurs.
+
+## Configuration
+
+Assurez-vous d'avoir un token JWT valide avec le rôle ROLE_ADMIN.
+
+```http
+@token = votre_token_jwt_ici
+@baseUrl = http://localhost:8000/api
+```
+
+## 1. Lister tous les administrateurs
+
+```http
+### Liste des administrateurs
+GET {{baseUrl}}/administrators
+Authorization: Bearer {{token}}
+```
+
+## 2. Récupérer un administrateur spécifique
+
+```http
+### Détails d'un administrateur
+GET {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+```
+
+## 3. Créer un nouvel administrateur
+
+```http
+### Créer un administrateur
+POST {{baseUrl}}/administrators
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "SecurePassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "isVerified": true
+}
+```
+
+## 4. Créer un administrateur avec des rôles supplémentaires
+
+```http
+### Créer un super administrateur
+POST {{baseUrl}}/administrators
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "superadmin@example.com",
+  "password": "SuperSecurePassword123!",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "roles": ["ROLE_ADMIN", "ROLE_SUPER_ADMIN"],
+  "isVerified": true
+}
+```
+
+## 5. Mettre à jour un administrateur (PUT - tous les champs)
+
+```http
+### Mise à jour complète d'un administrateur
+PUT {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "admin.updated@example.com",
+  "firstName": "John",
+  "lastName": "Doe Updated",
+  "isVerified": true
+}
+```
+
+## 6. Mettre à jour partiellement un administrateur (PATCH)
+
+```http
+### Mise à jour partielle - seulement le prénom
+PATCH {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Johnny"
+}
+```
+
+## 7. Changer le mot de passe d'un administrateur
+
+```http
+### Changer le mot de passe
+PATCH {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password": "NewSecurePassword123!"
+}
+```
+
+## 8. Mettre à jour les rôles d'un administrateur
+
+```http
+### Mettre à jour les rôles
+PATCH {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roles": ["ROLE_ADMIN", "ROLE_MODERATOR"]
+}
+```
+
+## 9. Vérifier un administrateur
+
+```http
+### Vérifier un administrateur
+PATCH {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isVerified": true
+}
+```
+
+## 10. Supprimer un administrateur
+
+```http
+### Supprimer un administrateur
+DELETE {{baseUrl}}/administrators/1
+Authorization: Bearer {{token}}
+```
+
+## Réponses attendues
+
+### Succès - Liste (200)
+```json
+[
+  {
+    "id": 1,
+    "email": "admin@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "roles": ["ROLE_USER", "ROLE_ADMIN"],
+    "isVerified": true,
+    "createdAt": "2026-02-11T10:00:00+00:00",
+    "updatedAt": "2026-02-11T10:00:00+00:00"
+  }
+]
+```
+
+### Succès - Création (201)
+```json
+{
+  "message": "Administrateur créé avec succès",
+  "id": 2,
+  "administrator": {
+    "id": 2,
+    "email": "admin@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "roles": ["ROLE_USER", "ROLE_ADMIN"],
+    "isVerified": true,
+    "createdAt": "2026-02-11T10:00:00+00:00"
+  }
+}
+```
+
+### Erreur - Non trouvé (404)
+```json
+{
+  "error": "Administrateur non trouvé"
+}
+```
+
+### Erreur - Email existe déjà (400)
+```json
+{
+  "error": "Un utilisateur avec cet email existe déjà"
+}
+```
+
+### Erreur - Dernier administrateur (400)
+```json
+{
+  "error": "Impossible de supprimer le dernier administrateur du système"
+}
+```
+
+## Notes importantes
+
+1. **Sécurité** : Toutes les opérations nécessitent le rôle `ROLE_ADMIN`
+2. **Validation** :
+   - L'email doit être valide et unique
+   - Le mot de passe doit contenir au minimum 6 caractères
+3. **Rôles** : Le rôle `ROLE_ADMIN` est automatiquement ajouté et ne peut pas être retiré
+4. **Protection** : Impossible de supprimer le dernier administrateur du système
+5. **Mise à jour** : Utilisez PATCH pour les mises à jour partielles, PUT pour les mises à jour complètes

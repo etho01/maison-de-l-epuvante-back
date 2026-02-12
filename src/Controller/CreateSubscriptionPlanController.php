@@ -23,10 +23,13 @@ class CreateSubscriptionPlanController extends AbstractController
         $plan->setName($data->name);
         $plan->setDescription($data->description);
         $plan->setPrice((string) $data->price);
-        $plan->setDuration($data->duration);
-        $plan->setDurationUnit($data->durationUnit);
-        $plan->setActive($data->active);
-        $plan->setFeatures($data->features ?? []);
+        
+        $plan->setDurationInMonths($data->durationInMonths);
+        
+        $plan->setBillingInterval($data->billingInterval);
+        
+        $plan->setActive($data->isActive ?? true);
+        $plan->setFormat('both'); // Valeur par défaut
 
         $this->entityManager->persist($plan);
         $this->entityManager->flush();
@@ -38,8 +41,8 @@ class CreateSubscriptionPlanController extends AbstractController
                 'id' => $plan->getId(),
                 'name' => $plan->getName(),
                 'price' => $plan->getPrice(),
-                'duration' => $plan->getDuration(),
-                'durationUnit' => $plan->getDurationUnit()
+                'durationInMonths' => $plan->getDurationInMonths(),
+                'billingInterval' => $plan->getBillingInterval()
             ]
         ], 201);
     }

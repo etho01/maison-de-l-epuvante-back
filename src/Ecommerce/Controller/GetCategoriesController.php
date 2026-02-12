@@ -25,8 +25,9 @@ class GetCategoriesController extends AbstractController
         $enablePagination = filter_var($request->query->get('pagination', 'true'), FILTER_VALIDATE_BOOLEAN);
 
         $queryBuilder = $this->categoryRepository->createQueryBuilder('c');
+        
         $result = $this->paginationService->paginate($queryBuilder, $page, $itemsPerPage, $enablePagination);
 
-        return $this->json($result, 200, [], ['groups' => ['category:read', 'category:list']]);
+        return $this->json($result, 200, [], ['groups' => ['category:read', 'category:list', 'parent', 'parent:read']]);
     }
 }

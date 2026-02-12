@@ -20,7 +20,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             controller: \App\Ecommerce\Controller\GetProductsController::class,
-            normalizationContext: ['groups' => ['product:read', 'product:list']],
+            normalizationContext: ['groups' => ['product:read', 'product:list', 'category', 'category:read']],
         ),
         new Get(
             uriTemplate: '/products/{id}',

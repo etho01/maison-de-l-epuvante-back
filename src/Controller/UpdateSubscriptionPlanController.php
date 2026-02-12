@@ -29,17 +29,19 @@ class UpdateSubscriptionPlanController extends AbstractController
         if ($data->price !== null) {
             $plan->setPrice($data->price);
         }
-        if ($data->duration !== null) {
-            $plan->setDuration($data->duration);
+        if ($data->durationInMonths !== null) {
+            $plan->setDurationInMonths($data->durationInMonths);
         }
-        if ($data->durationUnit !== null) {
-            $plan->setDurationUnit($data->durationUnit);
+        if ($data->billingInterval !== null) {
+            $plan->setBillingInterval($data->billingInterval);
         }
-        if ($data->features !== null) {
-            $plan->setFeatures($data->features);
+
+        if ($data->format !== null) {
+            $plan->setFormat($data->format);
         }
-        if ($data->isActive !== null) {
-            $plan->setIsActive($data->isActive);
+
+        if ($data->active !== null) {
+            $plan->setActive($data->active);
         }
         
         $plan->setUpdatedAt(new \DateTimeImmutable());

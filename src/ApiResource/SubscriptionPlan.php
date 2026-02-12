@@ -71,8 +71,8 @@ class SubscriptionPlan
 
     #[Assert\NotBlank(message: 'La durée est requise', groups: ['subscription_plan:write'])]
     #[Assert\Positive(message: 'La durée doit être positive', groups: ['subscription_plan:write'])]
-    #[Assert\Range(min: 1, max: 365, groups: ['subscription_plan:write'])]
-    public ?int $duration = null;
+    #[Assert\Range(min: 1, max: 120, groups: ['subscription_plan:write'])]
+    public ?int $durationInMonths = null;
 
     #[Assert\NotBlank(message: 'L\'unité de durée est requise', groups: ['subscription_plan:write'])]
     #[Assert\Choice(
@@ -80,9 +80,16 @@ class SubscriptionPlan
         message: 'L\'unité doit être day, week, month ou year',
         groups: ['subscription_plan:write']
     )]
-    public string $durationUnit = 'month';
+    public string $billingInterval = 'monthly';
 
-    public bool $isActive = true;
+    #[Assert\Choice(
+        choices: ['paper', 'digital', 'both'],
+        message: 'Le format doit être paper, digital ou both',
+        groups: ['subscription_plan:write']
+    )]
+    public ?string $format = 'both';
+
+    public bool $active = true;
 
     public ?array $features = [];
 
