@@ -26,6 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/orders/checkout',
             security: "is_granted('ROLE_USER')",
             controller: \App\Ecommerce\Controller\CreateOrderController::class,
+            input: \App\Ecommerce\Dto\OrderCheckoutInput::class,
             denormalizationContext: ['groups' => ['order:create']],
             name: 'api_order_checkout',
         ),
