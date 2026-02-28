@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\ApiResource\Administrator as AdministratorResource;
 use App\Entity\User;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,6 +16,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 #[AsController]
 class CreateAdministratorController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UserPasswordHasherInterface $passwordHasher
@@ -26,9 +30,7 @@ class CreateAdministratorController extends AbstractController
             ->findOneBy(['email' => $data->email]);
         
         if ($existingUser) {
-            return $this->json([
-                'error' => 'Un utilisateur avec cet email existe déjà'
-            ], 400);
+            return $this->errorResponse(400, ApiError::EMAIL_ALREADY_EXISTS);
         }
 
         $admin = new User();
@@ -53,18 +55,14 @@ class CreateAdministratorController extends AbstractController
         $this->entityManager->persist($admin);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Administrateur créé avec succès',
+        return $this->successResponse([
             'id' => $admin->getId(),
-            'administrator' => [
-                'id' => $admin->getId(),
-                'email' => $admin->getEmail(),
-                'firstName' => $admin->getFirstName(),
-                'lastName' => $admin->getLastName(),
-                'roles' => $admin->getRoles(),
-                'isVerified' => $admin->isVerified(),
-                'createdAt' => $admin->getCreatedAt()?->format('c'),
-            ]
+            'email' => $admin->getEmail(),
+            'firstName' => $admin->getFirstName(),
+            'lastName' => $admin->getLastName(),
+            'roles' => $admin->getRoles(),
+            'isVerified' => $admin->isVerified(),
+            'createdAt' => $admin->getCreatedAt()?->format('c'),
         ], 201);
     }
 }

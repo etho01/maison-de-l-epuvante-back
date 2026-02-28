@@ -3,18 +3,21 @@
 namespace App\Controller;
 
 use App\ApiResource\Administrator as AdministratorResource;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsController]
 class UpdateAdministratorController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UserRepository $userRepository,
@@ -26,12 +29,12 @@ class UpdateAdministratorController extends AbstractController
         $admin = $this->userRepository->find($id);
 
         if (!$admin) {
-            throw new NotFoundHttpException('Administrateur non trouvé');
+            return $this->errorResponse(404, ApiError::ADMINISTRATOR_NOT_FOUND);
         }
 
         // Vérifier que l'utilisateur est bien un administrateur
         if (!in_array('ROLE_ADMIN', $admin->getRoles())) {
-            throw new NotFoundHttpException('Cet utilisateur n\'est pas un administrateur');
+            return $this->errorResponse(404, ApiError::NOT_AN_ADMINISTRATOR);
         }
 
         // Mise à jour des champs
@@ -70,17 +73,14 @@ class UpdateAdministratorController extends AbstractController
 
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Administrateur mis à jour avec succès',
-            'administrator' => [
-                'id' => $admin->getId(),
-                'email' => $admin->getEmail(),
-                'firstName' => $admin->getFirstName(),
-                'lastName' => $admin->getLastName(),
-                'roles' => $admin->getRoles(),
-                'isVerified' => $admin->isVerified(),
-                'updatedAt' => $admin->getUpdatedAt()?->format('c'),
-            ]
+        return $this->successResponse([
+            'id' => $admin->getId(),
+            'email' => $admin->getEmail(),
+            'firstName' => $admin->getFirstName(),
+            'lastName' => $admin->getLastName(),
+            'roles' => $admin->getRoles(),
+            'isVerified' => $admin->isVerified(),
+            'updatedAt' => $admin->getUpdatedAt()?->format('c'),
         ]);
     }
 }

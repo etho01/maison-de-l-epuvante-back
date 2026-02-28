@@ -3,15 +3,18 @@
 namespace App\Controller;
 
 use App\ApiResource\Administrator as AdministratorResource;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 #[AsController]
 class GetAdministratorController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private UserRepository $userRepository
     ) {}
@@ -21,12 +24,12 @@ class GetAdministratorController extends AbstractController
         $admin = $this->userRepository->find($id);
 
         if (!$admin) {
-            throw new NotFoundHttpException('Administrateur non trouvé');
+            return $this->errorResponse(404, ApiError::ADMINISTRATOR_NOT_FOUND);
         }
 
         // Vérifier que l'utilisateur est bien un administrateur
         if (!in_array('ROLE_ADMIN', $admin->getRoles())) {
-            throw new NotFoundHttpException('Cet utilisateur n\'est pas un administrateur');
+            return $this->errorResponse(404, ApiError::NOT_AN_ADMINISTRATOR);
         }
 
         $resource = new AdministratorResource();
