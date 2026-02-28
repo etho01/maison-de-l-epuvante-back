@@ -16,51 +16,51 @@ use Symfony\Component\Validator\Constraints as Assert;
         // CRUD Operations
         new GetCollection(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\GetUsersController::class,
+            controller: \App\Controller\User\GetUsersController::class,
             normalizationContext: ['groups' => ['user:read', 'user:list']]
         ),
         new Get(
             security: "is_granted('ROLE_ADMIN') or object.id == user?.getId()",
-            controller: \App\Controller\GetUserController::class,
+            controller: \App\Controller\User\GetUserController::class,
             normalizationContext: ['groups' => ['user:read', 'user:detail']]
         ),
         new Post(
             security: "is_granted('PUBLIC_ACCESS')",
-            controller: \App\Controller\CreateUserController::class,
+            controller: \App\Controller\User\CreateUserController::class,
             validationContext: ['groups' => ['Default', 'user:create']],
             denormalizationContext: ['groups' => ['user:write']],
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN') or object.id == user?.getId()",
-            controller: \App\Controller\UpdateUserController::class,
+            controller: \App\Controller\User\UpdateUserController::class,
             denormalizationContext: ['groups' => ['user:write']],
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN') or object.id == user?.getId()",
-            controller: \App\Controller\UpdateUserController::class,
+            controller: \App\Controller\User\UpdateUserController::class,
             denormalizationContext: ['groups' => ['user:write']],
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\DeleteUserController::class,
+            controller: \App\Controller\User\DeleteUserController::class,
         ),
         
         // Authentication Operations
         new Post(
             uriTemplate: '/login',
-            controller: \App\Controller\AuthController::class . '::login',
+            controller: \App\Controller\Auth\AuthController::class . '::login',
             name: 'api_login',
             security: "is_granted('PUBLIC_ACCESS')"
         ),
         new Get(
             uriTemplate: '/me',
-            controller: \App\Controller\AuthController::class . '::getCurrentUser',
+            controller: \App\Controller\Auth\AuthController::class . '::getCurrentUser',
             name: 'api_current_user',
             security: "is_granted('ROLE_USER')",
         ),
         new Patch(
             uriTemplate: '/me',
-            controller: \App\Controller\AuthController::class . '::updateCurrentUser',
+            controller: \App\Controller\Auth\AuthController::class . '::updateCurrentUser',
             name: 'api_update_current_user',
             security: "is_granted('ROLE_USER')",
         ),
@@ -68,19 +68,19 @@ use Symfony\Component\Validator\Constraints as Assert;
         // Password Management Operations
         new Post(
             uriTemplate: '/change-password',
-            controller: \App\Controller\PasswordController::class . '::changePassword',
+            controller: \App\Controller\Auth\PasswordController::class . '::changePassword',
             name: 'api_change_password',
             security: "is_granted('ROLE_USER')"
         ),
         new Post(
             uriTemplate: '/reset-password-request',
-            controller: \App\Controller\PasswordController::class . '::requestResetPassword',
+            controller: \App\Controller\Auth\PasswordController::class . '::requestResetPassword',
             name: 'api_reset_password_request',
             security: "is_granted('PUBLIC_ACCESS')"
         ),
         new Post(
             uriTemplate: '/reset-password-confirm',
-            controller: \App\Controller\PasswordController::class . '::confirmResetPassword',
+            controller: \App\Controller\Auth\PasswordController::class . '::confirmResetPassword',
             name: 'api_reset_password_confirm',
             security: "is_granted('PUBLIC_ACCESS')"
         ),
@@ -88,13 +88,13 @@ use Symfony\Component\Validator\Constraints as Assert;
         // Email Verification Operations
         new Get(
             uriTemplate: '/verify/email',
-            controller: \App\Controller\VerifyEmailController::class . '::verifyUserEmail',
+            controller: \App\Controller\Auth\VerifyEmailController::class . '::verifyUserEmail',
             name: 'api_verify_email',
             security: "is_granted('PUBLIC_ACCESS')"
         ),
         new Post(
             uriTemplate: '/verify/resend',
-            controller: \App\Controller\VerifyEmailController::class . '::resendVerificationEmail',
+            controller: \App\Controller\Auth\VerifyEmailController::class . '::resendVerificationEmail',
             name: 'api_resend_verify_email',
             security: "is_granted('ROLE_USER')"
         ),

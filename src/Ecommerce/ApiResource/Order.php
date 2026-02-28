@@ -14,25 +14,25 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             security: "is_granted('ROLE_USER')",
-            controller: \App\Ecommerce\Controller\GetOrdersController::class,
+            controller: \App\Ecommerce\Controller\Order\GetOrdersController::class,
             normalizationContext: ['groups' => ['order:read', 'order:list']],
         ),
         new Get(
             security: "is_granted('ROLE_ADMIN') or object.user == user",
-            controller: \App\Ecommerce\Controller\GetOrderController::class,
+            controller: \App\Ecommerce\Controller\Order\GetOrderController::class,
             normalizationContext: ['groups' => ['order:read', 'order:detail']],
         ),
         new Post(
             uriTemplate: '/orders/checkout',
             security: "is_granted('ROLE_USER')",
-            controller: \App\Ecommerce\Controller\CreateOrderController::class,
+            controller: \App\Ecommerce\Controller\Order\CreateOrderController::class,
             input: \App\Ecommerce\Dto\OrderCheckoutInput::class,
             denormalizationContext: ['groups' => ['order:create']],
             name: 'api_order_checkout',
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\UpdateOrderController::class,
+            controller: \App\Ecommerce\Controller\Order\UpdateOrderController::class,
             denormalizationContext: ['groups' => ['order:update']],
         ),
     ],

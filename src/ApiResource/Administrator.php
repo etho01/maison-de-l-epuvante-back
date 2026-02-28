@@ -17,38 +17,38 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(
             uriTemplate: '/administrators',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\GetAdministratorsController::class,
+            controller: \App\Controller\Administrator\GetAdministratorsController::class,
             normalizationContext: ['groups' => ['admin:read', 'admin:list']]
         ),
         new Get(
             uriTemplate: '/administrators/{id}',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\GetAdministratorController::class,
+            controller: \App\Controller\Administrator\GetAdministratorController::class,
             normalizationContext: ['groups' => ['admin:read', 'admin:detail']]
         ),
         new Post(
             uriTemplate: '/administrators',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\CreateAdministratorController::class,
+            controller: \App\Controller\Administrator\CreateAdministratorController::class,
             validationContext: ['groups' => ['Default', 'admin:create']],
             denormalizationContext: ['groups' => ['admin:write']],
         ),
         new Put(
             uriTemplate: '/administrators/{id}',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\UpdateAdministratorController::class,
+            controller: \App\Controller\Administrator\UpdateAdministratorController::class,
             denormalizationContext: ['groups' => ['admin:write']],
         ),
         new Patch(
             uriTemplate: '/administrators/{id}',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\UpdateAdministratorController::class,
+            controller: \App\Controller\Administrator\UpdateAdministratorController::class,
             denormalizationContext: ['groups' => ['admin:write']],
         ),
         new Delete(
             uriTemplate: '/administrators/{id}',
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\DeleteAdministratorController::class,
+            controller: \App\Controller\Administrator\DeleteAdministratorController::class,
         ),
     ]
 )]

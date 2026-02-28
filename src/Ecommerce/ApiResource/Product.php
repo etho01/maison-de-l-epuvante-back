@@ -19,37 +19,37 @@ use Symfony\Component\Validator\Constraints as Assert;
     shortName: 'Product',
     operations: [
         new GetCollection(
-            controller: \App\Ecommerce\Controller\GetProductsController::class,
+            controller: \App\Ecommerce\Controller\Product\GetProductsController::class,
             normalizationContext: ['groups' => ['product:read', 'product:list', 'category', 'category:read']],
         ),
         new Get(
             uriTemplate: '/products/{id}',
-            controller: \App\Ecommerce\Controller\GetProductController::class,
+            controller: \App\Ecommerce\Controller\Product\GetProductController::class,
             normalizationContext: ['groups' => ['product:read', 'product:detail']],
         ),
         new Get(
             uriTemplate: '/products/slug/{slug}',
-            controller: \App\Ecommerce\Controller\GetProductBySlugController::class,
+            controller: \App\Ecommerce\Controller\Product\GetProductBySlugController::class,
             normalizationContext: ['groups' => ['product:read', 'product:detail']],
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\CreateProductController::class,
+            controller: \App\Ecommerce\Controller\Product\CreateProductController::class,
             denormalizationContext: ['groups' => ['product:write']],
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\UpdateProductController::class,
+            controller: \App\Ecommerce\Controller\Product\UpdateProductController::class,
             denormalizationContext: ['groups' => ['product:write']],
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\UpdateProductController::class,
+            controller: \App\Ecommerce\Controller\Product\UpdateProductController::class,
             denormalizationContext: ['groups' => ['product:write']],
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\DeleteProductController::class,
+            controller: \App\Ecommerce\Controller\Product\DeleteProductController::class,
         ),
     ],
     formats: ['json' => ['application/json'], 'jsonld' => ['application/ld+json']],

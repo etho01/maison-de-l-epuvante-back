@@ -14,31 +14,31 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             security: "is_granted('ROLE_USER')",
-            controller: \App\Controller\GetSubscriptionsController::class,
+            controller: \App\Controller\Subscription\GetSubscriptionsController::class,
             normalizationContext: ['groups' => ['subscription:read', 'subscription:list']],
         ),
         new Get(
             security: "is_granted('ROLE_ADMIN') or object.user == user",
-            controller: \App\Controller\GetSubscriptionController::class,
+            controller: \App\Controller\Subscription\GetSubscriptionController::class,
             normalizationContext: ['groups' => ['subscription:read', 'subscription:detail']],
         ),
         new Post(
             uriTemplate: '/subscriptions/subscribe',
             security: "is_granted('ROLE_USER')",
-            controller: \App\Controller\CreateSubscriptionController::class,
+            controller: \App\Controller\Subscription\CreateSubscriptionController::class,
             denormalizationContext: ['groups' => ['subscription:create']],
             name: 'api_subscription_subscribe',
         ),
         new Patch(
             uriTemplate: '/subscriptions/{id}/cancel',
             security: "is_granted('ROLE_USER') and object.user == user",
-            controller: \App\Controller\CancelSubscriptionController::class,
+            controller: \App\Controller\Subscription\CancelSubscriptionController::class,
             name: 'api_subscription_cancel',
         ),
         new Patch(
             uriTemplate: '/subscriptions/{id}/renew',
             security: "is_granted('ROLE_USER') and object.user == user",
-            controller: \App\Controller\RenewSubscriptionController::class,
+            controller: \App\Controller\Subscription\RenewSubscriptionController::class,
             denormalizationContext: ['groups' => ['subscription:renew']],
             name: 'api_subscription_renew',
         ),

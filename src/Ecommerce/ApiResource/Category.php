@@ -15,31 +15,31 @@ use Symfony\Component\Validator\Constraints as Assert;
     shortName: 'Category',
     operations: [
         new GetCollection(
-            controller: \App\Ecommerce\Controller\GetCategoriesController::class,
+            controller: \App\Ecommerce\Controller\Category\GetCategoriesController::class,
             normalizationContext: ['groups' => ['category:read', 'category:list', 'parent', 'parent:read']],
         ),
         new Get(
-            controller: \App\Ecommerce\Controller\GetCategoryController::class,
+            controller: \App\Ecommerce\Controller\Category\GetCategoryController::class,
             normalizationContext: ['groups' => ['category:read', 'category:detail']],
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\CreateCategoryController::class,
+            controller: \App\Ecommerce\Controller\Category\CreateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\UpdateCategoryController::class,
+            controller: \App\Ecommerce\Controller\Category\UpdateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\UpdateCategoryController::class,
+            controller: \App\Ecommerce\Controller\Category\UpdateCategoryController::class,
             denormalizationContext: ['groups' => ['category:write']],
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Ecommerce\Controller\DeleteCategoryController::class,
+            controller: \App\Ecommerce\Controller\Category\DeleteCategoryController::class,
         ),
     ],
     formats: ['json' => ['application/json'], 'jsonld' => ['application/ld+json']],

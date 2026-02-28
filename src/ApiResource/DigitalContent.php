@@ -13,23 +13,23 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             security: "is_granted('ROLE_USER')",
-            controller: \App\Controller\GetDigitalContentsController::class,
+            controller: \App\Controller\DigitalContent\GetDigitalContentsController::class,
             normalizationContext: ['groups' => ['digital_content:read', 'digital_content:list']],
         ),
         new Get(
             security: "is_granted('ROLE_USER')",
-            controller: \App\Controller\GetDigitalContentController::class,
+            controller: \App\Controller\DigitalContent\GetDigitalContentController::class,
             normalizationContext: ['groups' => ['digital_content:read', 'digital_content:detail']],
         ),
         new Get(
             uriTemplate: '/digital-contents/{id}/download',
             security: "is_granted('ROLE_USER')",
-            controller: \App\Controller\DownloadDigitalContentController::class,
+            controller: \App\Controller\DigitalContent\DownloadDigitalContentController::class,
             name: 'api_digital_content_download',
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\CreateDigitalContentController::class,
+            controller: \App\Controller\DigitalContent\CreateDigitalContentController::class,
             denormalizationContext: ['groups' => ['digital_content:write']],
             name: 'api_digital_content_create',
         ),

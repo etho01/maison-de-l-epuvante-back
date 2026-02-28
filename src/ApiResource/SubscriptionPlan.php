@@ -15,31 +15,31 @@ use Symfony\Component\Validator\Constraints as Assert;
     shortName: 'SubscriptionPlan',
     operations: [
         new GetCollection(
-            controller: \App\Controller\GetSubscriptionPlansController::class,
+            controller: \App\Controller\Subscription\GetSubscriptionPlansController::class,
             normalizationContext: ['groups' => ['subscription_plan:read', 'subscription_plan:list']],
         ),
         new Get(
-            controller: \App\Controller\GetSubscriptionPlanController::class,
+            controller: \App\Controller\Subscription\GetSubscriptionPlanController::class,
             normalizationContext: ['groups' => ['subscription_plan:read', 'subscription_plan:detail']],
         ),
         new Post(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\CreateSubscriptionPlanController::class,
+            controller: \App\Controller\Subscription\CreateSubscriptionPlanController::class,
             denormalizationContext: ['groups' => ['subscription_plan:write']],
         ),
         new Put(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\UpdateSubscriptionPlanController::class,
+            controller: \App\Controller\Subscription\UpdateSubscriptionPlanController::class,
             denormalizationContext: ['groups' => ['subscription_plan:write']],
         ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\UpdateSubscriptionPlanController::class,
+            controller: \App\Controller\Subscription\UpdateSubscriptionPlanController::class,
             denormalizationContext: ['groups' => ['subscription_plan:write']],
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-            controller: \App\Controller\DeleteSubscriptionPlanController::class,
+            controller: \App\Controller\Subscription\DeleteSubscriptionPlanController::class,
         ),
     ],
     formats: ['json' => ['application/json'], 'jsonld' => ['application/ld+json']],
