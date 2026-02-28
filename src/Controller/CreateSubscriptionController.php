@@ -6,6 +6,8 @@ use App\ApiResource\Subscription as SubscriptionResource;
 use App\Entity\Subscription;
 use App\Entity\SubscriptionPlan;
 use App\Entity\User;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,6 +18,8 @@ use Symfony\Bundle\SecurityBundle\Security;
 #[AsController]
 class CreateSubscriptionController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private Security $security
@@ -26,13 +30,13 @@ class CreateSubscriptionController extends AbstractController
         $user = $this->security->getUser();
         
         if (!$user instanceof User) {
-            return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            return $this->errorResponse(401, ApiError::USER_NOT_AUTHENTICATED);
         }
 
         $plan = $this->entityManager->getRepository(SubscriptionPlan::class)->find($data->planId);
         
         if (!$plan) {
-            return $this->json(['error' => 'Plan d\'abonnement non trouvé'], 404);
+            return $this->errorResponse(404, ApiError::SUBSCRIPTION_PLAN_NOT_FOUND);
         }
 
         $subscription = new Subscription();
@@ -60,15 +64,11 @@ class CreateSubscriptionController extends AbstractController
         $this->entityManager->persist($subscription);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Abonnement créé avec succès',
+        return $this->successResponse([
             'id' => $subscription->getId(),
-            'subscription' => [
-                'id' => $subscription->getId(),
-                'status' => $subscription->getStatus(),
-                'startDate' => $subscription->getStartDate()?->format('Y-m-d'),
-                'endDate' => $subscription->getEndDate()?->format('Y-m-d')
-            ]
+            'status' => $subscription->getStatus(),
+            'startDate' => $subscription->getStartDate()?->format('Y-m-d'),
+            'endDate' => $subscription->getEndDate()?->format('Y-m-d')
         ], 201);
     }
 }

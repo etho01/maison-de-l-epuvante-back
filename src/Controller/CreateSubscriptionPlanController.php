@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\ApiResource\SubscriptionPlan as SubscriptionPlanResource;
 use App\Entity\SubscriptionPlan;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,6 +14,8 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 #[AsController]
 class CreateSubscriptionPlanController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager
     ) {}
@@ -34,16 +37,12 @@ class CreateSubscriptionPlanController extends AbstractController
         $this->entityManager->persist($plan);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Plan d\'abonnement créé avec succès',
+        return $this->successResponse([
             'id' => $plan->getId(),
-            'plan' => [
-                'id' => $plan->getId(),
-                'name' => $plan->getName(),
-                'price' => $plan->getPrice(),
-                'durationInMonths' => $plan->getDurationInMonths(),
-                'billingInterval' => $plan->getBillingInterval()
-            ]
+            'name' => $plan->getName(),
+            'price' => $plan->getPrice(),
+            'durationInMonths' => $plan->getDurationInMonths(),
+            'billingInterval' => $plan->getBillingInterval()
         ], 201);
     }
 }
