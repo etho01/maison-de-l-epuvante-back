@@ -2,6 +2,7 @@
 
 namespace App\Ecommerce\Controller;
 
+use App\Trait\ApiResponseTrait;
 use App\Ecommerce\ApiResource\Category as CategoryResource;
 use App\Ecommerce\Entity\Category;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,6 +15,8 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 #[AsController]
 class CreateCategoryController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private SluggerInterface $slugger
@@ -41,15 +44,11 @@ class CreateCategoryController extends AbstractController
         $this->entityManager->persist($category);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Catégorie créée avec succès',
+        return $this->successResponse([
             'id' => $category->getId(),
-            'category' => [
-                'id' => $category->getId(),
-                'name' => $category->getName(),
-                'slug' => $category->getSlug(),
-                'description' => $category->getDescription()
-            ]
+            'name' => $category->getName(),
+            'slug' => $category->getSlug(),
+            'description' => $category->getDescription()
         ], 201);
     }
 }
