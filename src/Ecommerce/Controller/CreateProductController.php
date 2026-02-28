@@ -2,6 +2,7 @@
 
 namespace App\Ecommerce\Controller;
 
+use App\Trait\ApiResponseTrait;
 use App\Ecommerce\ApiResource\Product as ProductResource;
 use App\Ecommerce\Entity\Category;
 use App\Ecommerce\Entity\Product;
@@ -15,6 +16,8 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 #[AsController]
 class CreateProductController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private SluggerInterface $slugger
@@ -52,17 +55,13 @@ class CreateProductController extends AbstractController
         $this->entityManager->persist($product);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Produit créé avec succès',
+        return $this->successResponse([
             'id' => $product->getId(),
-            'product' => [
-                'id' => $product->getId(),
-                'name' => $product->getName(),
-                'slug' => $product->getSlug(),
-                'price' => $product->getPrice(),
-                'stock' => $product->getStock(),
-                'type' => $product->getType()
-            ]
+            'name' => $product->getName(),
+            'slug' => $product->getSlug(),
+            'price' => $product->getPrice(),
+            'stock' => $product->getStock(),
+            'type' => $product->getType()
         ], 201);
     }
 }

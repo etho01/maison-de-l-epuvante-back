@@ -2,6 +2,8 @@
 
 namespace App\Ecommerce\Controller;
 
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use App\Ecommerce\ApiResource\Product as ProductResource;
 use App\Ecommerce\Entity\Category;
 use App\Ecommerce\Entity\Product;
@@ -10,11 +12,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 #[AsController]
 class UpdateProductController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager
     ) {}
@@ -24,7 +27,7 @@ class UpdateProductController extends AbstractController
         $product = $this->entityManager->getRepository(Product::class)->find($id);
         
         if (!$product) {
-            throw new NotFoundHttpException('Produit non trouvé');
+            return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND);
         }
 
         if ($data->name) {
@@ -89,15 +92,12 @@ class UpdateProductController extends AbstractController
         $product->setUpdatedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Produit mis à jour avec succès',
-            'product' => [
-                'id' => $product->getId(),
-                'name' => $product->getName(),
-                'slug' => $product->getSlug(),
-                'price' => $product->getPrice(),
-                'stock' => $product->getStock()
-            ]
+        return $this->successResponse([
+            'id' => $product->getId(),
+            'name' => $product->getName(),
+            'slug' => $product->getSlug(),
+            'price' => $product->getPrice(),
+            'stock' => $product->getStock()
         ]);
     }
 }
