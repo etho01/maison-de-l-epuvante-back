@@ -4,17 +4,20 @@ namespace App\Controller;
 
 use App\ApiResource\User as UserResource;
 use App\Entity\User;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsController]
 class UpdateUserController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UserPasswordHasherInterface $passwordHasher
@@ -25,7 +28,7 @@ class UpdateUserController extends AbstractController
         $user = $this->entityManager->getRepository(User::class)->find($id);
         
         if (!$user) {
-            throw new NotFoundHttpException('Utilisateur non trouvé');
+            return $this->errorResponse(404, ApiError::USER_NOT_FOUND);
         }
 
         if ($data->email) {
@@ -52,15 +55,12 @@ class UpdateUserController extends AbstractController
         $user->setUpdatedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Utilisateur mis à jour avec succès',
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'roles' => $user->getRoles()
-            ]
+        return $this->successResponse([
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'firstName' => $user->getFirstName(),
+            'lastName' => $user->getLastName(),
+            'roles' => $user->getRoles()
         ]);
     }
 }
