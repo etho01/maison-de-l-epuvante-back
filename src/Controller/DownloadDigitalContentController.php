@@ -3,21 +3,25 @@
 namespace App\Controller;
 
 use App\Entity\DigitalContent;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Attribute\AsController;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 #[AsController]
 class DownloadDigitalContentController extends AbstractController
 {
-    public function __invoke(DigitalContent $data): BinaryFileResponse
+    use ApiResponseTrait;
+
+    public function __invoke(DigitalContent $data): BinaryFileResponse|JsonResponse
     {
         $filePath = $data->getFilePath();
         
         if (!file_exists($filePath)) {
-            throw new NotFoundHttpException('Le fichier n\'existe pas');
+            return $this->errorResponse(404, ApiError::FILE_NOT_FOUND);
         }
         
         $response = new BinaryFileResponse($filePath);

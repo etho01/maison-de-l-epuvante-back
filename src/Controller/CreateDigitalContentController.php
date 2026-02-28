@@ -6,6 +6,7 @@ use App\ApiResource\DigitalContent as DigitalContentResource;
 use App\Ecommerce\Entity\Product;
 use App\Entity\DigitalContent;
 use App\Entity\SubscriptionPlan;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 #[AsController]
 class CreateDigitalContentController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager
     ) {}
@@ -46,15 +49,11 @@ class CreateDigitalContentController extends AbstractController
         $this->entityManager->persist($content);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Contenu numérique créé avec succès',
+        return $this->successResponse([
             'id' => $content->getId(),
-            'content' => [
-                'id' => $content->getId(),
-                'name' => $content->getName(),
-                'contentType' => $content->getContentType(),
-                'fileSize' => $content->getFileSize()
-            ]
+            'name' => $content->getName(),
+            'contentType' => $content->getContentType(),
+            'fileSize' => $content->getFileSize()
         ], 201);
     }
 }
