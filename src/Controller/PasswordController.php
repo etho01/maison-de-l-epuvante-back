@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\ResetPasswordRequest;
 use App\Entity\User;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use App\Repository\ResetPasswordRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,6 +17,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PasswordController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function changePassword(
         Request $request,
         #[CurrentUser] ?User $user,
@@ -23,31 +27,23 @@ class PasswordController extends AbstractController
         ValidatorInterface $validator
     ): JsonResponse {
         if (null === $user) {
-            return $this->json([
-                'message' => 'Non autorisé',
-            ], JsonResponse::HTTP_UNAUTHORIZED);
+            return $this->errorResponse(401, ApiError::USER_NOT_AUTHENTICATED);
         }
 
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['currentPassword']) || !isset($data['newPassword'])) {
-            return $this->json([
-                'message' => 'Mot de passe actuel et nouveau mot de passe requis',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::MISSING_PARAMETERS);
         }
 
         // Vérifier le mot de passe actuel
         if (!$passwordHasher->isPasswordValid($user, $data['currentPassword'])) {
-            return $this->json([
-                'message' => 'Mot de passe actuel incorrect',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::INVALID_PASSWORD);
         }
 
         // Valider le nouveau mot de passe
         if (strlen($data['newPassword']) < 8) {
-            return $this->json([
-                'message' => 'Le nouveau mot de passe doit contenir au moins 8 caractères',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::PASSWORD_TOO_SHORT);
         }
 
         // Mettre à jour le mot de passe
@@ -55,21 +51,16 @@ class PasswordController extends AbstractController
         
         $errors = $validator->validate($user, groups: ['user:password']);
         if (count($errors) > 0) {
-            $errorMessages = [];
+            $errorMessages = [ApiError::VALIDATION_FAILED];
             foreach ($errors as $error) {
                 $errorMessages[] = $error->getMessage();
             }
-            return $this->json([
-                'message' => 'Erreur de validation',
-                'errors' => $errorMessages,
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, $errorMessages);
         }
 
         $entityManager->flush();
 
-        return $this->json([
-            'message' => 'Mot de passe modifié avec succès',
-        ]);
+        return $this->json(['code' => 200, 'data' => null]);
     }
 
     public function requestResetPassword(
@@ -80,9 +71,7 @@ class PasswordController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['email'])) {
-            return $this->json([
-                'message' => 'Email requis',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::MISSING_PARAMETERS);
         }
 
         $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
@@ -120,11 +109,7 @@ class PasswordController extends AbstractController
         }
 
         // Toujours retourner un succès pour ne pas révéler si l'email existe
-        return $this->json([
-            'message' => 'Si cet email existe, un lien de réinitialisation a été envoyé',
-            // En développement uniquement :
-            // 'resetUrl' => $resetUrl ?? null,
-        ]);
+        return $this->json(['code' => 200, 'data' => null]);
     }
 
     public function confirmResetPassword(
@@ -136,18 +121,14 @@ class PasswordController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['token']) || !isset($data['newPassword'])) {
-            return $this->json([
-                'message' => 'Token et nouveau mot de passe requis',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::MISSING_PARAMETERS);
         }
 
         // Vérifier le token en base de données
         $resetRequest = $resetPasswordRepository->findOneBy(['token' => $data['token']]);
         
         if (!$resetRequest) {
-            return $this->json([
-                'message' => 'Token invalide',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::INVALID_TOKEN);
         }
 
         if ($resetRequest->isExpired()) {
@@ -155,25 +136,19 @@ class PasswordController extends AbstractController
             $entityManager->remove($resetRequest);
             $entityManager->flush();
             
-            return $this->json([
-                'message' => 'Le lien de réinitialisation a expiré. Veuillez en demander un nouveau.',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::TOKEN_EXPIRED);
         }
 
         // Récupérer l'utilisateur depuis le resetRequest
         $user = $resetRequest->getUser();
 
         if (!$user) {
-            return $this->json([
-                'message' => 'Utilisateur non trouvé',
-            ], JsonResponse::HTTP_NOT_FOUND);
+            return $this->errorResponse(404, ApiError::USER_NOT_FOUND);
         }
 
         // Valider le nouveau mot de passe
         if (strlen($data['newPassword']) < 8) {
-            return $this->json([
-                'message' => 'Le nouveau mot de passe doit contenir au moins 8 caractères',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::PASSWORD_TOO_SHORT);
         }
 
         // Hasher et mettre à jour le mot de passe
@@ -186,8 +161,6 @@ class PasswordController extends AbstractController
         
         $entityManager->flush();
 
-        return $this->json([
-            'message' => 'Mot de passe réinitialisé avec succès',
-        ]);
+        return $this->json(['code' => 200, 'data' => null]);
     }
 }

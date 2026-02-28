@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,6 +14,8 @@ use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 
 class VerifyEmailController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private VerifyEmailHelperInterface $verifyEmailHelper,
         private EntityManagerInterface $entityManager
@@ -24,23 +28,17 @@ class VerifyEmailController extends AbstractController
         $token = $request->query->get('token');
 
         if (null === $id || null === $token) {
-            return $this->json([
-                'message' => 'Paramètres manquants',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::MISSING_PARAMETERS);
         }
 
         $user = $this->entityManager->getRepository(User::class)->find($id);
 
         if (null === $user) {
-            return $this->json([
-                'message' => 'Utilisateur non trouvé',
-            ], JsonResponse::HTTP_NOT_FOUND);
+            return $this->errorResponse(404, ApiError::USER_NOT_FOUND);
         }
 
         if ($user->isVerified()) {
-            return $this->json([
-                'message' => 'Email déjà vérifié',
-            ]);
+            return $this->errorResponse(400, ApiError::EMAIL_ALREADY_VERIFIED);
         }
 
         try {
@@ -50,17 +48,13 @@ class VerifyEmailController extends AbstractController
                 $user->getEmail()
             );
         } catch (VerifyEmailExceptionInterface $exception) {
-            return $this->json([
-                'message' => 'Le lien de vérification est invalide ou a expiré',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::INVALID_TOKEN);
         }
 
         $user->setVerified(true);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'Email vérifié avec succès',
-        ]);
+        return $this->json(['code' => 200, 'data' => null]);
     }
 
     public function resendVerificationEmail(Request $request): JsonResponse
@@ -68,24 +62,18 @@ class VerifyEmailController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['email'])) {
-            return $this->json([
-                'message' => 'Email requis',
-            ], JsonResponse::HTTP_BAD_REQUEST);
+            return $this->errorResponse(400, ApiError::MISSING_PARAMETERS);
         }
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
 
         if (null === $user) {
             // Ne pas révéler si l'email existe
-            return $this->json([
-                'message' => 'Si cet email existe et n\'est pas vérifié, un nouvel email a été envoyé',
-            ]);
+            return $this->json(['code' => 200, 'data' => null]);
         }
 
         if ($user->isVerified()) {
-            return $this->json([
-                'message' => 'Email déjà vérifié',
-            ]);
+            return $this->errorResponse(400, ApiError::EMAIL_ALREADY_VERIFIED);
         }
 
         // Dans une vraie application, générez et envoyez un email avec le lien de vérification
@@ -97,10 +85,6 @@ class VerifyEmailController extends AbstractController
 
         // Ici, vous enverriez normalement un email avec le lien : $signatureComponents->getSignedUrl()
         
-        return $this->json([
-            'message' => 'Email de vérification envoyé',
-            // En développement, vous pouvez retourner l'URL :
-            // 'verificationUrl' => $signatureComponents->getSignedUrl(),
-        ]);
+        return $this->json(['code' => 200, 'data' => null]);
     }
 }
