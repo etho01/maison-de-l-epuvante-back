@@ -2,6 +2,8 @@
 
 namespace App\Ecommerce\Controller;
 
+use App\Enum\ApiError;
+use App\Trait\ApiResponseTrait;
 use App\Ecommerce\Dto\OrderCheckoutInput;
 use App\Ecommerce\Entity\OrderItem;
 use App\Ecommerce\Repository\ProductRepository;
@@ -20,6 +22,8 @@ use Throwable;
 #[AsController]
 class CreateOrderController extends AbstractController
 {
+    use ApiResponseTrait;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private Security $security,
@@ -32,7 +36,7 @@ class CreateOrderController extends AbstractController
         $user = $this->security->getUser();
         
         if (!$user instanceof User) {
-            return $this->json(['error' => 'Utilisateur non authentifié'], 401);
+            return $this->errorResponse(401, ApiError::USER_NOT_AUTHENTICATED);
         }
 
         $order = new Order();
@@ -48,19 +52,31 @@ class CreateOrderController extends AbstractController
             $productId = (int) $productLine['id'];
             $quantity = (int) $productLine['quantity'];
 
-            if ($quantity <= 0) {
-                return $this->json(['error' => 'La quantité doit être supérieure à 0'], 400);
-            }
-
             $product = $this->productRepository->find($productId);
 
+            if ($quantity <= 0 || $quantity > $product->getStock()) {
+                return $this->errorResponse(400, ApiError::INVALID_QUANTITY, [
+                    'productId' => $productId,
+                    'quantity' => $quantity,
+                    'availableStock' => $product->getStock(),
+                    'productName' => $product->getName()
+                ]);
+            }
+
             if (!$product) {
-                return $this->json(['error' => sprintf('Produit %d introuvable', $productId)], 404);
+                return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND, [
+                    'productId' => $productId,
+                    'productName' => $productLine['name'] ?? null
+                ]);
             }
 
             $unitPrice = (float) $product->getPrice();
             $lineTotal = $unitPrice * $quantity;
             $totalAmount += $lineTotal;
+
+            $product->setStock($product->getStock() - $quantity);
+            $this->entityManager->persist($product);
+            $this->entityManager->flush();
 
             $orderItem = new OrderItem();
             $orderItem->setProduct($product);
@@ -108,14 +124,10 @@ class CreateOrderController extends AbstractController
         } catch (ApiErrorException | Throwable $exception) {
             $connection->rollBack();
 
-            return $this->json([
-                'error' => 'Erreur lors de la création du paiement Stripe',
-                'details' => $exception->getMessage(),
-            ], 502);
+            return $this->errorResponse(502, ApiError::PAYMENT_ERROR);
         }
 
-        return $this->json([
-            'message' => 'Commande créée avec succès',
+        return $this->successResponse([
             'id' => $order->getId(),
             'order' => [
                 'id' => $order->getId(),
