@@ -1,0 +1,11 @@
+### Health Check Simple
+# Vérification rapide que l'application fonctionne
+GET http://localhost:8000/api/health
+
+###
+
+### Installation Check Complet
+# Vérification complète de l'installation de l'application
+GET http://localhost:8000/api/install/check
+
+###
