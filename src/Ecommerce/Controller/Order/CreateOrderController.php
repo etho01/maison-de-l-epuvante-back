@@ -28,7 +28,9 @@ class CreateOrderController extends AbstractController
         private EntityManagerInterface $entityManager,
         private Security $security,
         private ProductRepository $productRepository,
-        private StripeClient $stripeClient
+        private StripeClient $stripeClient,
+        #[\Symfony\Component\DependencyInjection\Attribute\Autowire('%env(FRONTEND_URL)%')]
+        private string $defaultUri
     ) {}
 
     public function __invoke(#[MapRequestPayload] OrderCheckoutInput $data): JsonResponse
@@ -91,33 +93,47 @@ class CreateOrderController extends AbstractController
 
         $order->setTotalAmount(number_format($totalAmount, 2, '.', ''));
 
+        // Préparer les line_items pour Stripe Checkout
+        $lineItems = [];
+        foreach ($order->getItems() as $orderItem) {
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => 'eur',
+                    'product_data' => [
+                        'name' => $orderItem->getProductName(),
+                        'description' => $orderItem->getProductSku(),
+                    ],
+                    'unit_amount' => (int) round((float) $orderItem->getUnitPrice() * 100),
+                ],
+                'quantity' => $orderItem->getQuantity(),
+            ];
+        }
+
         $connection = $this->entityManager->getConnection();
-        $paymentIntentId = null;
-        $paymentIntentClientSecret = null;
+        $checkoutSessionId = null;
+        $checkoutUrl = null;
         $connection->beginTransaction();
 
         try {
             $this->entityManager->persist($order);
             $this->entityManager->flush();
 
-            $amountCents = (int) round($totalAmount * 100);
-
-            $paymentIntent = $this->stripeClient->paymentIntents->create([
-                'amount' => $amountCents,
-                'currency' => 'eur',
-                'description' => sprintf('Commande %s', $order->getOrderNumber()),
+            $checkoutSession = $this->stripeClient->checkout->sessions->create([
+                'payment_method_types' => ['card'],
+                'line_items' => $lineItems,
+                'mode' => 'payment',
+                'success_url' => $this->defaultUri . '/success?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $this->defaultUri . '/cancel?session_id={CHECKOUT_SESSION_ID}',
                 'metadata' => [
                     'orderId' => $order->getId(),
                     'orderNumber' => $order->getOrderNumber(),
                 ],
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                ],
+                'customer_email' => $user->getEmail(),
             ]);
 
-            $paymentIntentId = $paymentIntent->id;
-            $paymentIntentClientSecret = $paymentIntent->client_secret;
-            $order->setPaymentIntentId($paymentIntentId);
+            $checkoutSessionId = $checkoutSession->id;
+            $checkoutUrl = $checkoutSession->url;
+            $order->setPaymentIntentId($checkoutSessionId);
             $this->entityManager->flush();
 
             $connection->commit();
@@ -135,9 +151,9 @@ class CreateOrderController extends AbstractController
                 'status' => $order->getStatus(),
                 'totalAmount' => $order->getTotalAmount()
             ],
-            'stripePayment' => [
-                'paymentIntentId' => $paymentIntentId,
-                'clientSecret' => $paymentIntentClientSecret
+            'stripeCheckout' => [
+                'sessionId' => $checkoutSessionId,
+                'url' => $checkoutUrl
             ]
         ], 201);
     }
