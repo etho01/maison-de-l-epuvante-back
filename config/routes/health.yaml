@@ -1,0 +1,10 @@
+# Routes pour le health check et l'installation
+app_health_check:
+    path: /api/health
+    controller: App\Controller\HealthCheckController::check
+    methods: GET
+
+app_install_check:
+    path: /api/install/check
+    controller: App\Controller\HealthCheckController::installCheck
+    methods: GET
