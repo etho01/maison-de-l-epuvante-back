@@ -2,6 +2,7 @@
 
 namespace App\Ecommerce\Entity;
 
+use App\Ecommerce\Enum\OrderStatus;
 use App\Ecommerce\Repository\OrderRepository;
 use App\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -27,6 +28,7 @@ class Order
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
+     #[Groups(['order:user'])]
     private ?User $user = null;
 
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -34,9 +36,9 @@ class Order
     private Collection $items;
 
     #[ORM\Column(length: 50)]
-    #[Assert\Choice(choices: ['pending', 'processing', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'])]
+    #[Assert\Choice(callback: [OrderStatus::class, 'values'])]
     #[Groups(['order:read', 'order:list', 'order:detail', 'order:update'])]
-    private ?string $status = 'pending';
+    private ?string $status = OrderStatus::PENDING->value;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Groups(['order:read', 'order:detail'])]
@@ -300,29 +302,29 @@ class Order
 
     public function isPending(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === OrderStatus::PENDING->value;
     }
 
     public function isPaid(): bool
     {
-        return $this->status === 'paid';
+        return $this->status === OrderStatus::PAID->value;
     }
 
     public function isCancelled(): bool
     {
-        return $this->status === 'cancelled';
+        return $this->status === OrderStatus::CANCELLED->value;
     }
 
     public function markAsPaid(): static
     {
-        $this->status = 'paid';
+        $this->status = OrderStatus::PAID->value;
         $this->paidAt = new \DateTimeImmutable();
         return $this;
     }
 
     public function cancel(): static
     {
-        $this->status = 'cancelled';
+        $this->status = OrderStatus::CANCELLED->value;
         return $this;
     }
 

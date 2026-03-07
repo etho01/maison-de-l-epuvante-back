@@ -42,6 +42,6 @@ class GetOrderByPaymentIntentController extends AbstractController
             return $this->errorResponse(403, ApiError::ACCESS_DENIED);
         }
 
-        return $this->json($order, 200, [], ['groups' => ['order:read', 'order:detail']]);
+        return $this->json($order, 200, [], ['groups' => ['order:read', 'order:detail', 'user:read']]);
     }
 }

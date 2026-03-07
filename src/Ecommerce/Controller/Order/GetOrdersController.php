@@ -37,6 +37,6 @@ class GetOrdersController extends AbstractController
         
         $result = $this->paginationService->paginate($queryBuilder, $page, $itemsPerPage, $enablePagination);
         
-        return $this->json($result, 200, [], ['groups' => ['order:read', 'order:list']]);
+        return $this->json($result, 200, [], ['groups' => ['order:read', 'order:list', 'order:user', 'user:read']]);
     }
 }

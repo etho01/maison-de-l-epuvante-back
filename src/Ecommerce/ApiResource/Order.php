@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
+use App\Ecommerce\Enum\OrderStatus;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -37,6 +38,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             denormalizationContext: ['groups' => ['order:create']],
             name: 'api_order_checkout',
         ),
+        new Post(
+            uriTemplate: '/orders/{id}/status',
+            security: "is_granted('ROLE_USER') and (is_granted('ROLE_ADMIN') or object.user == user)",
+            controller: \App\Ecommerce\Controller\Order\ChangeOrderStatusController::class,
+            input: \App\Ecommerce\Dto\ChangeOrderStatusInput::class,
+            name: 'api_order_change_status',
+        ),
         new Patch(
             security: "is_granted('ROLE_ADMIN')",
             controller: \App\Ecommerce\Controller\Order\UpdateOrderController::class,
@@ -56,11 +64,11 @@ class Order
 
     #[Assert\NotBlank(message: 'Le statut est requis', groups: ['order:create', 'order:update'])]
     #[Assert\Choice(
-        choices: ['pending', 'processing', 'completed', 'cancelled', 'refunded'],
-        message: 'Le statut doit être pending, processing, completed, cancelled ou refunded',
+        callback: [OrderStatus::class, 'values'],
+        message: 'Le statut doit être valide',
         groups: ['order:create', 'order:update']
     )]
-    public string $status = 'pending';
+    public string $status = OrderStatus::PENDING->value;
 
     #[Assert\NotBlank(message: 'L\'adresse de facturation est requise', groups: ['order:create'])]
     #[Assert\Length(max: 500, groups: ['order:create'])]

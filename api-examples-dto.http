@@ -270,6 +270,43 @@ GET {{baseUrl}}/api/orders/payment-intent/pi_3AbCdEfGhIjKlMnO
 Accept: application/json
 Authorization: Bearer {{userToken}}
 
+### Annuler sa propre commande (Client)
+POST {{baseUrl}}/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "status": "cancelled"
+}
+
+### Changer le statut d'une commande (ADMIN uniquement)
+POST {{baseUrl}}/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "paid",
+  "adminNotes": "Paiement confirmé manuellement"
+}
+
+### Changer le statut en "shipped" (ADMIN uniquement)
+POST {{baseUrl}}/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "shipped"
+}
+
+### Changer le statut en "delivered" (ADMIN uniquement)
+POST {{baseUrl}}/api/orders/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "delivered"
+}
+
 
 ### ========================================
 ### GESTION DES ABONNEMENTS (avec validation DTO)

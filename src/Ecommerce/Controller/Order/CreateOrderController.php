@@ -76,6 +76,12 @@ class CreateOrderController extends AbstractController
             $lineTotal = $unitPrice * $quantity;
             $totalAmount += $lineTotal;
 
+            if ($product->getType() === 'physical') {
+                $product->setStock($product->getStock() - $quantity);
+            } elseif ($product->getType() === 'digital' && $product->getStock() != -1) {
+                // Pour les produits digitaux avec stock limité, on décrémente également le stock
+                $product->setStock($product->getStock() - $quantity);
+            }
             $product->setStock($product->getStock() - $quantity);
             $this->entityManager->persist($product);
             $this->entityManager->flush();
