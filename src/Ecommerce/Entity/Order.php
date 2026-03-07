@@ -52,11 +52,11 @@ class Order
 
     #[ORM\Column(type: Types::JSON)]
     #[Groups(['order:read', 'order:detail', 'order:create'])]
-    private array $shippingAddress = [];
-
-    #[ORM\Column(type: Types::JSON)]
-    #[Groups(['order:read', 'order:detail', 'order:create'])]
     private array $billingAddress = [];
+
+    #[ORM\OneToOne(mappedBy: 'order', cascade: ['persist', 'remove'])]
+    #[Groups(['order:read', 'order:detail'])]
+    private ?Delivery $delivery = null;
 
     #[ORM\Column(length: 50, nullable: true)]
     #[Groups(['order:read', 'order:detail'])]
@@ -74,13 +74,8 @@ class Order
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $paidAt = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $shippedAt = null;
-
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $deliveredAt = null;
-
     #[ORM\Column]
+    #[Groups(['order:read', 'order:detail'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
@@ -199,17 +194,6 @@ class Order
         return $this;
     }
 
-    public function getShippingAddress(): array
-    {
-        return $this->shippingAddress;
-    }
-
-    public function setShippingAddress(array $shippingAddress): static
-    {
-        $this->shippingAddress = $shippingAddress;
-        return $this;
-    }
-
     public function getBillingAddress(): array
     {
         return $this->billingAddress;
@@ -218,6 +202,22 @@ class Order
     public function setBillingAddress(array $billingAddress): static
     {
         $this->billingAddress = $billingAddress;
+        return $this;
+    }
+
+    public function getDelivery(): ?Delivery
+    {
+        return $this->delivery;
+    }
+
+    public function setDelivery(?Delivery $delivery): static
+    {
+        // set the owning side of the relation if necessary
+        if ($delivery !== null && $delivery->getOrder() !== $this) {
+            $delivery->setOrder($this);
+        }
+
+        $this->delivery = $delivery;
         return $this;
     }
 
@@ -276,28 +276,6 @@ class Order
         return $this;
     }
 
-    public function getShippedAt(): ?\DateTimeImmutable
-    {
-        return $this->shippedAt;
-    }
-
-    public function setShippedAt(?\DateTimeImmutable $shippedAt): static
-    {
-        $this->shippedAt = $shippedAt;
-        return $this;
-    }
-
-    public function getDeliveredAt(): ?\DateTimeImmutable
-    {
-        return $this->deliveredAt;
-    }
-
-    public function setDeliveredAt(?\DateTimeImmutable $deliveredAt): static
-    {
-        $this->deliveredAt = $deliveredAt;
-        return $this;
-    }
-
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
@@ -330,16 +308,6 @@ class Order
         return $this->status === 'paid';
     }
 
-    public function isShipped(): bool
-    {
-        return $this->status === 'shipped';
-    }
-
-    public function isDelivered(): bool
-    {
-        return $this->status === 'delivered';
-    }
-
     public function isCancelled(): bool
     {
         return $this->status === 'cancelled';
@@ -352,23 +320,19 @@ class Order
         return $this;
     }
 
-    public function markAsShipped(): static
-    {
-        $this->status = 'shipped';
-        $this->shippedAt = new \DateTimeImmutable();
-        return $this;
-    }
-
-    public function markAsDelivered(): static
-    {
-        $this->status = 'delivered';
-        $this->deliveredAt = new \DateTimeImmutable();
-        return $this;
-    }
-
     public function cancel(): static
     {
         $this->status = 'cancelled';
         return $this;
+    }
+
+    public function hasPhysicalProducts(): bool
+    {
+        foreach ($this->items as $item) {
+            if ($item->getProduct() && $item->getProduct()->getType() === 'physical') {
+                return true;
+            }
+        }
+        return false;
     }
 }

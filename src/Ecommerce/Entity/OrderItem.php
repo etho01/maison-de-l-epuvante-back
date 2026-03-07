@@ -22,6 +22,10 @@ class OrderItem
     #[ORM\JoinColumn(nullable: false)]
     private ?Order $order = null;
 
+    #[ORM\ManyToOne(inversedBy: 'items')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Delivery $delivery = null;
+
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['order:read', 'order:detail'])]
@@ -61,6 +65,17 @@ class OrderItem
     public function setOrder(?Order $order): static
     {
         $this->order = $order;
+        return $this;
+    }
+
+    public function getDelivery(): ?Delivery
+    {
+        return $this->delivery;
+    }
+
+    public function setDelivery(?Delivery $delivery): static
+    {
+        $this->delivery = $delivery;
         return $this;
     }
 

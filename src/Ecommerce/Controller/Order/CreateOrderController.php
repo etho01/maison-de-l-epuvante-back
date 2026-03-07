@@ -6,6 +6,7 @@ use App\Enum\ApiError;
 use App\Trait\ApiResponseTrait;
 use App\Ecommerce\Dto\OrderCheckoutInput;
 use App\Ecommerce\Entity\OrderItem;
+use App\Ecommerce\Entity\Delivery;
 use App\Ecommerce\Repository\ProductRepository;
 use App\Ecommerce\Entity\Order;
 use App\Entity\User;
@@ -43,7 +44,6 @@ class CreateOrderController extends AbstractController
 
         $order = new Order();
         $order->setUser($user);
-        $order->setShippingAddress($data->shippingAddress);
         $order->setBillingAddress($data->billingAddress);
         $order->setPaymentMethod($data->paymentMethod);
         $order->setCustomerNotes($data->customerNotes);
@@ -56,19 +56,19 @@ class CreateOrderController extends AbstractController
 
             $product = $this->productRepository->find($productId);
 
-            if ($quantity <= 0 || $quantity > $product->getStock()) {
+            if (!$product) {
+                return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND, [
+                    'productId' => $productId,
+                    'productName' => $productLine['name'] ?? null
+                ]);
+            }
+
+            if (($quantity <= 0 || $quantity > $product->getStock()) && ($product->getType() === 'digital' && $product->getStock() != -1)) { // stock -1 = product infinite
                 return $this->errorResponse(400, ApiError::INVALID_QUANTITY, [
                     'productId' => $productId,
                     'quantity' => $quantity,
                     'availableStock' => $product->getStock(),
                     'productName' => $product->getName()
-                ]);
-            }
-
-            if (!$product) {
-                return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND, [
-                    'productId' => $productId,
-                    'productName' => $productLine['name'] ?? null
                 ]);
             }
 
@@ -92,6 +92,20 @@ class CreateOrderController extends AbstractController
         }
 
         $order->setTotalAmount(number_format($totalAmount, 2, '.', ''));
+
+        // Créer une livraison uniquement si la commande contient des produits physiques
+        if ($order->hasPhysicalProducts()) {
+            $delivery = new Delivery();
+            $delivery->setShippingAddress($data->shippingAddress);
+            $order->setDelivery($delivery);
+            
+            // Lier les items physiques à la livraison
+            foreach ($order->getItems() as $orderItem) {
+                if ($orderItem->getProduct() && $orderItem->getProduct()->getType() === 'physical') {
+                    $delivery->addItem($orderItem);
+                }
+            }
+        }
 
         // Préparer les line_items pour Stripe Checkout
         $lineItems = [];

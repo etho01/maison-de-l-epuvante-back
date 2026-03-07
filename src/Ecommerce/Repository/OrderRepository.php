@@ -22,4 +22,13 @@ class OrderRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findByPaymentIntentId(string $paymentIntentId): ?Order
+    {
+        return $this->createQueryBuilder('o')
+            ->where('o.paymentIntentId = :paymentIntentId')
+            ->setParameter('paymentIntentId', $paymentIntentId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

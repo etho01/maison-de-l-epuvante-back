@@ -265,6 +265,11 @@ GET {{baseUrl}}/api/orders/1
 Accept: application/json
 Authorization: Bearer {{userToken}}
 
+### Obtenir une commande par Payment Intent ID
+GET {{baseUrl}}/api/orders/payment-intent/pi_3AbCdEfGhIjKlMnO
+Accept: application/json
+Authorization: Bearer {{userToken}}
+
 
 ### ========================================
 ### GESTION DES ABONNEMENTS (avec validation DTO)

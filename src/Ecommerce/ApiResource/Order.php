@@ -22,6 +22,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             controller: \App\Ecommerce\Controller\Order\GetOrderController::class,
             normalizationContext: ['groups' => ['order:read', 'order:detail']],
         ),
+        new Get(
+            uriTemplate: '/orders/payment-intent/{paymentIntentId}',
+            security: "is_granted('ROLE_USER')",
+            controller: \App\Ecommerce\Controller\Order\GetOrderByPaymentIntentController::class,
+            normalizationContext: ['groups' => ['order:read', 'order:detail']],
+            name: 'api_order_by_payment_intent',
+        ),
         new Post(
             uriTemplate: '/orders/checkout',
             security: "is_granted('ROLE_USER')",
@@ -54,10 +61,6 @@ class Order
         groups: ['order:create', 'order:update']
     )]
     public string $status = 'pending';
-
-    #[Assert\NotBlank(message: 'L\'adresse de livraison est requise', groups: ['order:create'])]
-    #[Assert\Length(max: 500, groups: ['order:create'])]
-    public ?string $shippingAddress = null;
 
     #[Assert\NotBlank(message: 'L\'adresse de facturation est requise', groups: ['order:create'])]
     #[Assert\Length(max: 500, groups: ['order:create'])]
