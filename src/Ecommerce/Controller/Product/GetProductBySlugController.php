@@ -6,9 +6,8 @@ use App\Enum\ApiError;
 use App\Trait\ApiResponseTrait;
 use App\Ecommerce\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Loader\Configurator\App;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class GetProductBySlugController extends AbstractController
 {
@@ -16,7 +15,7 @@ class GetProductBySlugController extends AbstractController
 
     public function __construct(
         private ProductRepository $productRepository,
-        private SerializerInterface $serializer
+        private NormalizerInterface $normalizer
     ) {
     }
 
@@ -28,7 +27,7 @@ class GetProductBySlugController extends AbstractController
             return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND, ['slug' => $slug]);
         }
 
-        $data = $this->serializer->normalize(
+        $data = $this->normalizer->normalize(
             $product,
             null,
             ['groups' => ['product:read', 'product:detail']]
