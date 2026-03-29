@@ -12,6 +12,6 @@ class GetOrderController extends AbstractController
 {
     public function __invoke(Order $data): JsonResponse
     {
-        return $this->json($data, 200, [], ['groups' => ['order:read', 'order:user', 'user:read', 'order:detail']]);
+        return $this->json($data, 200, [], ['groups' => ['order:read', 'order:user', 'user:read', 'order:detail', 'order:orderItem', 'orderItem:read', 'orderItem:detail']]);
     }
 }

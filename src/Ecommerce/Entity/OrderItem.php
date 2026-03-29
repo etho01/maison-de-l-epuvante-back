@@ -15,7 +15,7 @@ class OrderItem
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'items')]
@@ -28,28 +28,28 @@ class OrderItem
 
     #[ORM\ManyToOne(inversedBy: 'orderItems')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?Product $product = null;
 
     #[ORM\Column]
     #[Assert\Positive]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?int $quantity = 1;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?string $unitPrice = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?string $totalPrice = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?string $productName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['orderItem:read', 'orderItem:detail'])]
     private ?string $productSku = null;
 
     public function getId(): ?int

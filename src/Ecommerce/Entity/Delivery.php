@@ -2,6 +2,7 @@
 
 namespace App\Ecommerce\Entity;
 
+use App\Ecommerce\Enum\DeliveryStatus;
 use App\Ecommerce\Repository\DeliveryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -17,57 +18,58 @@ class Delivery
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['delivery:read', 'order:read', 'order:detail'])]
+    #[Groups(['delivery:read', 'delivery:list', 'order:read', 'order:detail'])]
     private ?int $id = null;
 
     #[ORM\OneToOne(inversedBy: 'delivery', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['delivery:read', 'delivery:detail'])]
     private ?Order $order = null;
 
     #[ORM\OneToMany(mappedBy: 'delivery', targetEntity: OrderItem::class)]
-    #[Groups(['delivery:read', 'order:detail'])]
+    #[Groups(['delivery:orderItem'])]
     private Collection $items;
 
     #[ORM\Column(type: Types::JSON)]
     #[Assert\NotBlank]
-    #[Groups(['delivery:read', 'delivery:write', 'order:read', 'order:detail'])]
+    #[Groups(['delivery:read', 'delivery:detail', 'delivery:write', 'order:read', 'order:detail'])]
     private array $shippingAddress = [];
 
     #[ORM\Column(length: 50)]
-    #[Assert\Choice(choices: ['pending', 'preparing', 'shipped', 'in_transit', 'delivered', 'failed'])]
-    #[Groups(['delivery:read', 'delivery:write', 'order:read', 'order:detail'])]
-    private ?string $status = 'pending';
+    #[Assert\Choice(callback: [DeliveryStatus::class, 'values'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail', 'delivery:write', 'order:read', 'order:detail'])]
+    private ?string $status = DeliveryStatus::PENDING->value;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['delivery:read', 'delivery:write'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail', 'delivery:write'])]
     private ?string $trackingNumber = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['delivery:read', 'delivery:write'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail', 'delivery:write'])]
     private ?string $carrier = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['delivery:read', 'order:detail'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail', 'order:detail'])]
     private ?\DateTimeImmutable $shippedAt = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['delivery:read', 'order:detail'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail', 'order:detail'])]
     private ?\DateTimeImmutable $deliveredAt = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['delivery:read', 'order:detail'])]
+    #[Groups(['delivery:read', 'delivery:detail', 'order:detail'])]
     private ?\DateTimeImmutable $estimatedDeliveryDate = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['delivery:read', 'delivery:write'])]
+    #[Groups(['delivery:read', 'delivery:detail', 'delivery:write'])]
     private ?string $notes = null;
 
     #[ORM\Column]
-    #[Groups(['delivery:read'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
-    #[Groups(['delivery:read'])]
+    #[Groups(['delivery:read', 'delivery:list', 'delivery:detail'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
@@ -235,7 +237,7 @@ class Delivery
 
     public function markAsShipped(?string $trackingNumber = null, ?string $carrier = null): static
     {
-        $this->status = 'shipped';
+        $this->status = DeliveryStatus::SHIPPED->value;
         $this->shippedAt = new \DateTimeImmutable();
         
         if ($trackingNumber) {
@@ -252,7 +254,7 @@ class Delivery
 
     public function markAsDelivered(): static
     {
-        $this->status = 'delivered';
+        $this->status = DeliveryStatus::DELIVERED->value;
         $this->deliveredAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         return $this;
@@ -260,16 +262,16 @@ class Delivery
 
     public function isPending(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === DeliveryStatus::PENDING->value;
     }
 
     public function isShipped(): bool
     {
-        return $this->status === 'shipped';
+        return $this->status === DeliveryStatus::SHIPPED->value;
     }
 
     public function isDelivered(): bool
     {
-        return $this->status === 'delivered';
+        return $this->status === DeliveryStatus::DELIVERED->value;
     }
 }

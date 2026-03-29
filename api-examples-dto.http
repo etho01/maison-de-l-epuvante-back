@@ -309,6 +309,75 @@ Authorization: Bearer {{adminToken}}
 
 
 ### ========================================
+### GESTION DES LIVRAISONS (ADMIN uniquement)
+### ========================================
+
+### Obtenir toutes les livraisons (ADMIN)
+GET {{baseUrl}}/api/deliveries
+Accept: application/json
+Authorization: Bearer {{adminToken}}
+
+### Obtenir les livraisons avec filtrage par statut (ADMIN)
+GET {{baseUrl}}/api/deliveries?status=pending
+Accept: application/json
+Authorization: Bearer {{adminToken}}
+
+### Obtenir une livraison spécifique (ADMIN)
+GET {{baseUrl}}/api/deliveries/1
+Accept: application/json
+Authorization: Bearer {{adminToken}}
+
+### Changer le statut d'une livraison en "preparing" (ADMIN)
+POST {{baseUrl}}/api/deliveries/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "preparing"
+}
+
+### Changer le statut en "shipped" avec infos de tracking (ADMIN)
+POST {{baseUrl}}/api/deliveries/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "shipped",
+  "trackingNumber": "1Z999AA10123456784",
+  "carrier": "UPS",
+  "notes": "Expédié depuis l'entrepôt central"
+}
+
+### Changer le statut en "in_transit" (ADMIN)
+POST {{baseUrl}}/api/deliveries/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "in_transit"
+}
+
+### Changer le statut en "delivered" (ADMIN)
+POST {{baseUrl}}/api/deliveries/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "delivered"
+}
+
+### Changer le statut en "failed" (ADMIN)
+POST {{baseUrl}}/api/deliveries/1/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "failed",
+  "notes": "Adresse introuvable - contact client nécessaire"
+}
+
+
+### ========================================
 ### GESTION DES ABONNEMENTS (avec validation DTO)
 ### ========================================
 

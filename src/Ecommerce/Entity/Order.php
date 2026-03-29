@@ -32,7 +32,7 @@ class Order
     private ?User $user = null;
 
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderItem::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[Groups(['order:read', 'order:detail'])]
+    #[Groups(['order:orderItem'])]
     private Collection $items;
 
     #[ORM\Column(length: 50)]

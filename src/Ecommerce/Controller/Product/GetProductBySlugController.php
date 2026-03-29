@@ -28,9 +28,9 @@ class GetProductBySlugController extends AbstractController
             return $this->errorResponse(404, ApiError::PRODUCT_NOT_FOUND, ['slug' => $slug]);
         }
 
-        $data = $this->serializer->serialize(
+        $data = $this->serializer->normalize(
             $product,
-            'array',
+            null,
             ['groups' => ['product:read', 'product:detail']]
         );
 

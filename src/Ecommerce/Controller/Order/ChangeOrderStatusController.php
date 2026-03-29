@@ -7,6 +7,7 @@ use App\Trait\ApiResponseTrait;
 use App\Ecommerce\Dto\ChangeOrderStatusInput;
 use App\Ecommerce\Entity\Order;
 use App\Ecommerce\Enum\OrderStatus;
+use App\Ecommerce\Enum\DeliveryStatus;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -74,7 +75,7 @@ class ChangeOrderStatusController extends AbstractController
             case OrderStatus::SHIPPED->value:
                 // Si la commande a une livraison, mettre à jour son statut
                 if ($order->getDelivery()) {
-                    $order->getDelivery()->setStatus('shipped');
+                    $order->getDelivery()->setStatus(DeliveryStatus::SHIPPED->value);
                     $order->getDelivery()->setShippedAt(new \DateTimeImmutable());
                 }
                 break;
@@ -82,7 +83,7 @@ class ChangeOrderStatusController extends AbstractController
             case OrderStatus::DELIVERED->value:
                 // Si la commande a une livraison, marquer comme livrée
                 if ($order->getDelivery()) {
-                    $order->getDelivery()->setStatus('delivered');
+                    $order->getDelivery()->setStatus(DeliveryStatus::DELIVERED->value);
                     $order->getDelivery()->setDeliveredAt(new \DateTimeImmutable());
                 }
                 break;
