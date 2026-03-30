@@ -2,6 +2,7 @@
 
 <div align="center">
 
+![Status](https://img.shields.io/badge/Status-En%20D%C3%A9veloppement-orange?style=flat-square)
 ![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
 ![Symfony Version](https://img.shields.io/badge/Symfony-7.4-000000?logo=symfony&logoColor=white)
 ![API Platform](https://img.shields.io/badge/API%20Platform-4.2-38A3A5?logo=api&logoColor=white)
@@ -13,6 +14,8 @@
 [Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Architecture](#-architecture)
 
 </div>
+
+> **⚠️ Note** : Ce projet est actuellement **en cours de développement**. Certaines fonctionnalités peuvent être incomplètes ou sujettes à modifications.
 
 ---
 
