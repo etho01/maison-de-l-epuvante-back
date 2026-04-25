@@ -19,6 +19,8 @@ spec:
       labels:
         app: maison-epouvante-back
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 33
@@ -26,7 +28,7 @@ spec:
       containers:
         - name: app
           image: ghcr.io/etho01/maison-epouvante-back:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true

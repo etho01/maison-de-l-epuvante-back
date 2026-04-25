@@ -18,7 +18,7 @@ spec:
         fsGroup: 33
       containers:
         - name: migrate
-          image: ghcr.io/etho01/maison-epouvante-back:latest
+          image: ghcr.io/etho01/maison-de-l-epuvante-back:latest
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
