@@ -1,4 +1,4 @@
-name: Deploy cinegest-back to K3s
+name: Deploy maison-epouvante-back to K3s
 
 on:
   push:
@@ -156,21 +156,21 @@ jobs:
           
           # Attendre que l'ExternalSecret soit prêt (max 2 minutes)
           for i in {1..60}; do
-            STATUS=$(kubectl -n ${NAMESPACE} get externalsecret cinegest-back-vault -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
+            STATUS=$(kubectl -n ${NAMESPACE} get externalsecret maison-epouvante-back-vault -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
             
             if [ "$STATUS" = "True" ]; then
               echo "✅ Secrets synchronized from Vault"
-              kubectl -n ${NAMESPACE} get secret cinegest-back-secret
+              kubectl -n ${NAMESPACE} get secret maison-epouvante-back-secret
               break
             fi
             
             if [ $i -eq 60 ]; then
               echo "⚠️ Timeout waiting for Vault secrets synchronization"
               echo "Checking ExternalSecret status:"
-              kubectl -n ${NAMESPACE} describe externalsecret cinegest-back-vault || true
+              kubectl -n ${NAMESPACE} describe externalsecret maison-epouvante-back-vault || true
               
               # Vérifier si le secret existe quand même (manuel)
-              if kubectl -n ${NAMESPACE} get secret cinegest-back-secret &>/dev/null; then
+              if kubectl -n ${NAMESPACE} get secret maison-epouvante-back-secret &>/dev/null; then
                 echo "⚠️ Using existing manual secret (Vault not configured)"
               else
                 echo "❌ No secret available - deployment will fail"
@@ -184,8 +184,6 @@ jobs:
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/clusterissuer.yaml
-          kubectl apply -f k8s/middleware.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
@@ -194,7 +192,7 @@ jobs:
       - name: Update image
         run: |
           kubectl -n ${NAMESPACE} set image deployment/${DEPLOYMENT_NAME} \
-            ${CONTAINER_NAME}=ghcr.io/etho01/cinegest-back:${{ needs.build-and-push.outputs.image_tag }}
+            ${CONTAINER_NAME}=ghcr.io/etho01/maison-epouvante-back:${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Save current deployment image
         id: previous
@@ -205,13 +203,13 @@ jobs:
       - name: Run migrations
         id: migrate
         run: |
-          kubectl -n ${NAMESPACE} delete job cinegest-back-migrate --ignore-not-found=true
-          sed "s|ghcr.io/etho01/cinegest-back:latest|ghcr.io/etho01/cinegest-back:${{ needs.build-and-push.outputs.image_tag }}|g" \
+          kubectl -n ${NAMESPACE} delete job maison-epouvante-back-migrate --ignore-not-found=true
+          sed "s|ghcr.io/etho01/maison-epouvante-back:latest|ghcr.io/etho01/maison-epouvante-back:${{ needs.build-and-push.outputs.image_tag }}|g" \
             k8s/migrate-job.yaml | kubectl apply -f -
           
-          if ! kubectl -n ${NAMESPACE} wait --for=condition=complete job/cinegest-back-migrate --timeout=300s; then
+          if ! kubectl -n ${NAMESPACE} wait --for=condition=complete job/maison-epouvante-back-migrate --timeout=300s; then
             echo "Migration failed!"
-            kubectl -n ${NAMESPACE} logs job/cinegest-back-migrate --tail=50
+            kubectl -n ${NAMESPACE} logs job/maison-epouvante-back-migrate --tail=50
             exit 1
           fi
 
@@ -221,7 +219,7 @@ jobs:
           if ! kubectl -n ${NAMESPACE} rollout status deployment/${DEPLOYMENT_NAME} --timeout=300s; then
             echo "Deployment failed!"
             kubectl -n ${NAMESPACE} describe deployment ${DEPLOYMENT_NAME}
-            kubectl -n ${NAMESPACE} logs -l app=cinegest-back --tail=50
+            kubectl -n ${NAMESPACE} logs -l app=maison-epouvante-back --tail=50
             exit 1
           fi
 
