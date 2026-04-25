@@ -74,12 +74,6 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      - name: Install Vault CLI
-        run: |
-          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install -y vault
-
       - name: Check and install External Secrets Operator
         run: |
           # Vérifier si les CRDs d'ESO sont installés
@@ -121,78 +115,6 @@ jobs:
             deployment/external-secrets -n external-secrets 2>/dev/null || \
             kubectl wait --for=condition=available --timeout=300s \
               deployment/external-secrets-webhook -n external-secrets 2>/dev/null || true
-
-      - name: Configure Vault Kubernetes Auth
-        env:
-          VAULT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN }}
-        run: |
-          echo "🔐 Configuration de l'authentification Vault"
-          
-          # Port-forward Vault
-          kubectl -n vault port-forward svc/vault 8200:8200 > /dev/null 2>&1 &
-          PF_PID=$!
-          sleep 5
-          
-          export VAULT_ADDR=http://127.0.0.1:8200
-          
-          # Vérifier si le rôle existe déjà
-          if vault read auth/kubernetes/role/maison-epouvante-app &>/dev/null; then
-            echo "✅ Rôle Vault déjà configuré"
-            kill $PF_PID 2>/dev/null || true
-            exit 0
-          fi
-          
-          echo "📝 Configuration initiale de Vault..."
-          
-          # Activer l'auth Kubernetes si pas déjà fait
-          vault auth list | grep -q "kubernetes/" || vault auth enable kubernetes
-          
-          # Créer le ServiceAccount, son token et les permissions RBAC
-          kubectl apply -f k8s/vault/serviceaccount.yaml
-          kubectl apply -f k8s/vault/rbac.yaml
-          
-          # Attendre le token
-          for i in {1..30}; do
-            if kubectl -n ${NAMESPACE} get secret vault-auth-token &>/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          
-          # Récupérer les credentials K8s
-          SA_JWT_TOKEN=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.token}' | base64 -d)
-          SA_CA_CRT=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.ca\.crt}' | base64 -d)
-          
-          # IMPORTANT: Utiliser l'URL interne du cluster (pas localhost)
-          K8S_INTERNAL_HOST="https://kubernetes.default.svc.cluster.local:443"
-          
-          # Configurer Vault avec l'URL interne
-          vault write auth/kubernetes/config \
-            token_reviewer_jwt="$SA_JWT_TOKEN" \
-            kubernetes_host="$K8S_INTERNAL_HOST" \
-            kubernetes_ca_cert="$SA_CA_CRT"
-          
-          # Créer la policy
-          vault policy write maison-epouvante-app - <<EOF
-          path "secret/data/maison-epouvante/*" {
-            capabilities = ["read", "list"]
-          }
-          path "secret/metadata/maison-epouvante/*" {
-            capabilities = ["read", "list"]
-          }
-          EOF
-          
-          # Créer le rôle
-          vault write auth/kubernetes/role/maison-epouvante-app \
-            bound_service_account_names=vault-auth \
-            bound_service_account_namespaces=${NAMESPACE} \
-            policies=maison-epouvante-app \
-            ttl=24h
-          
-          echo "✅ Vault configuré avec l'URL interne du cluster"
-          
-          # Cleanup
-          kill $PF_PID 2>/dev/null || true
 
       - name: Deploy Vault integration
         run: |
@@ -270,7 +192,7 @@ jobs:
       - name: Update image
         run: |
           kubectl -n ${NAMESPACE} set image deployment/${DEPLOYMENT_NAME} \
-            ${CONTAINER_NAME}=ghcr.io/etho01/maison-epouvante-back:${{ needs.build-and-push.outputs.image_tag }}
+            ${CONTAINER_NAME}=ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}
 
       - name: Save current deployment image
         id: previous
@@ -282,7 +204,7 @@ jobs:
         id: migrate
         run: |
           kubectl -n ${NAMESPACE} delete job maison-epouvante-back-migrate --ignore-not-found=true
-          sed "s|ghcr.io/etho01/maison-epouvante-back:latest|ghcr.io/etho01/maison-epouvante-back:${{ needs.build-and-push.outputs.image_tag }}|g" \
+          sed "s|ghcr.io/etho01/maison-de-l-epuvante-back:latest|ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}|g" \
             k8s/migrate-job.yaml | kubectl apply -f -
           
           if ! kubectl -n ${NAMESPACE} wait --for=condition=complete job/maison-epouvante-back-migrate --timeout=300s; then
