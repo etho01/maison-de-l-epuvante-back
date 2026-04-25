@@ -92,6 +92,24 @@ metadata:
 type: kubernetes.io/service-account-token
 EOF
 
+# Créer ClusterRoleBinding pour TokenReview
+sudo kubectl apply -f - <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-tokenreview-binding-${NAMESPACE}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: ${SA_NAME}
+  namespace: ${NAMESPACE}
+EOF
+
+echo -e "${GREEN}✅ ServiceAccount et permissions créés${NC}"
+
 # Attendre que le token soit généré
 echo "Attente de la génération du token..."
 for i in {1..30}; do
@@ -123,9 +141,9 @@ echo -e "${CYAN}🔧 Configuration de la connexion Vault → Kubernetes...${NC}"
 K8S_INTERNAL_HOST="https://kubernetes.default.svc.cluster.local:443"
 
 vault write auth/kubernetes/config \
+    token_reviewer_jwt="$SA_JWT_TOKEN" \
     kubernetes_host="$K8S_INTERNAL_HOST" \
-    kubernetes_ca_cert="$SA_CA_CRT" \
-    disable_local_ca_jwt="false"
+    kubernetes_ca_cert="$SA_CA_CRT"
 
 echo -e "${GREEN}✅ Configuration Kubernetes OK${NC}"
 
