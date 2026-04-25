@@ -30,7 +30,7 @@ VAULT_ROLE="maison-epouvante-app"
 
 # Port-forward Vault
 echo -e "${CYAN}📡 Démarrage du port-forward vers Vault...${NC}"
-kubectl -n vault port-forward svc/vault 8200:8200 > /dev/null 2>&1 &
+sudo kubectl -n vault port-forward svc/vault 8200:8200 > /dev/null 2>&1 &
 PF_PID=$!
 sleep 3
 
@@ -75,7 +75,7 @@ echo ""
 echo -e "${CYAN}📥 Récupération des informations du ServiceAccount...${NC}"
 
 # Attendre que le ServiceAccount et son token soient créés
-kubectl -n ${NAMESPACE} apply -f - <<EOF
+sudo kubectl -n ${NAMESPACE} apply -f - <<EOF
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -95,7 +95,7 @@ EOF
 # Attendre que le token soit généré
 echo "Attente de la génération du token..."
 for i in {1..30}; do
-    if kubectl -n ${NAMESPACE} get secret ${SA_NAME}-token &>/dev/null; then
+    if sudo kubectl -n ${NAMESPACE} get secret ${SA_NAME}-token &>/dev/null; then
         TOKEN_NAME="${SA_NAME}-token"
         break
     fi
