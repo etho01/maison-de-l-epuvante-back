@@ -114,8 +114,12 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-progress -
 # Copy application files
 COPY --chown=www-data:www-data . .
 
+# Copy JWT key generation script
+COPY generate-jwt-keys.sh /usr/local/bin/generate-jwt-keys.sh
+
 # Set permissions
 RUN chmod +x bin/console \
+    && chmod +x /usr/local/bin/generate-jwt-keys.sh \
     && mkdir -p var/cache var/log \
     && chown -R www-data:www-data var
 
