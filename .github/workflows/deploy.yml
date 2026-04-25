@@ -116,6 +116,76 @@ jobs:
             kubectl wait --for=condition=available --timeout=300s \
               deployment/external-secrets-webhook -n external-secrets 2>/dev/null || true
 
+      - name: Configure Vault Kubernetes Auth
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN }}
+        run: |
+          echo "🔐 Configuration de l'authentification Vault"
+          
+          # Port-forward Vault
+          kubectl -n vault port-forward svc/vault 8200:8200 > /dev/null 2>&1 &
+          PF_PID=$!
+          sleep 5
+          
+          export VAULT_ADDR=http://127.0.0.1:8200
+          
+          # Vérifier si le rôle existe déjà
+          if vault read auth/kubernetes/role/maison-epouvante-app &>/dev/null; then
+            echo "✅ Rôle Vault déjà configuré"
+            kill $PF_PID 2>/dev/null || true
+            exit 0
+          fi
+          
+          echo "📝 Configuration initiale de Vault..."
+          
+          # Activer l'auth Kubernetes si pas déjà fait
+          vault auth list | grep -q "kubernetes/" || vault auth enable kubernetes
+          
+          # Créer le ServiceAccount et son token
+          kubectl apply -f k8s/vault/serviceaccount.yaml
+          
+          # Attendre le token
+          for i in {1..30}; do
+            if kubectl -n ${NAMESPACE} get secret vault-auth-token &>/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          
+          # Récupérer les credentials K8s
+          SA_JWT_TOKEN=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.token}' | base64 -d)
+          SA_CA_CRT=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.ca\.crt}' | base64 -d)
+          K8S_HOST=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.server}')
+          
+          # Configurer Vault
+          vault write auth/kubernetes/config \
+            token_reviewer_jwt="$SA_JWT_TOKEN" \
+            kubernetes_host="$K8S_HOST" \
+            kubernetes_ca_cert="$SA_CA_CRT" \
+            disable_local_ca_jwt="true"
+          
+          # Créer la policy
+          vault policy write maison-epouvante-app - <<EOF
+          path "secret/data/maison-epouvante/*" {
+            capabilities = ["read", "list"]
+          }
+          path "secret/metadata/maison-epouvante/*" {
+            capabilities = ["read", "list"]
+          }
+          EOF
+          
+          # Créer le rôle
+          vault write auth/kubernetes/role/maison-epouvante-app \
+            bound_service_account_names=vault-auth \
+            bound_service_account_namespaces=${NAMESPACE} \
+            policies=maison-epouvante-app \
+            ttl=24h
+          
+          echo "✅ Vault configuré"
+          
+          # Cleanup
+          kill $PF_PID 2>/dev/null || true
+
       - name: Deploy Vault integration
         run: |
           # Debug : vérifier que les CRDs sont bien là

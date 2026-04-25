@@ -107,11 +107,11 @@ for i in {1..30}; do
 done
 
 # Récupérer le token et le CA
-SA_JWT_TOKEN=$(kubectl -n ${NAMESPACE} get secret ${TOKEN_NAME} -o jsonpath='{.data.token}' | base64 -d)
-SA_CA_CRT=$(kubectl -n ${NAMESPACE} get secret ${TOKEN_NAME} -o jsonpath='{.data.ca\.crt}' | base64 -d)
+SA_JWT_TOKEN=$(sudo kubectl -n ${NAMESPACE} get secret ${TOKEN_NAME} -o jsonpath='{.data.token}' | base64 -d)
+SA_CA_CRT=$(sudo kubectl -n ${NAMESPACE} get secret ${TOKEN_NAME} -o jsonpath='{.data.ca\.crt}' | base64 -d)
 
 # URL de l'API Kubernetes
-K8S_HOST=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.server}')
+K8S_HOST=$(sudo kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.server}')
 
 echo -e "${GREEN}✅ Informations récupérées${NC}"
 
