@@ -119,11 +119,13 @@ echo -e "${GREEN}✅ Informations récupérées${NC}"
 echo ""
 echo -e "${CYAN}🔧 Configuration de la connexion Vault → Kubernetes...${NC}"
 
+# Utiliser l'URL interne du cluster au lieu de localhost
+K8S_INTERNAL_HOST="https://kubernetes.default.svc.cluster.local:443"
+
 vault write auth/kubernetes/config \
-    token_reviewer_jwt="$SA_JWT_TOKEN" \
-    kubernetes_host="$K8S_HOST" \
+    kubernetes_host="$K8S_INTERNAL_HOST" \
     kubernetes_ca_cert="$SA_CA_CRT" \
-    disable_local_ca_jwt="true"
+    disable_local_ca_jwt="false"
 
 echo -e "${GREEN}✅ Configuration Kubernetes OK${NC}"
 
