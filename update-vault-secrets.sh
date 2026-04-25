@@ -62,9 +62,42 @@ export VAULT_TOKEN="$ROOT_TOKEN"
 # Vérifier la connexion
 echo -e "${CYAN}🔍 Vérification de la connexion à Vault...${NC}"
 if ! vault status &>/dev/null; then
-    echo -e "${RED}❌ Impossible de se connecter à Vault${NC}"
+    # Vérifier si Vault est scellé
+    if vault status 2>&1 | grep -q "Vault is sealed"; then
+        echo -e "${RED}❌ Vault est scellé (sealed)${NC}"
+        echo -e "${YELLOW}📋 Pour desceller Vault:${NC}"
+        echo ""
+        echo "  1. Dans un autre terminal, exécutez:"
+        echo "     vault operator unseal <VOTRE_UNSEAL_KEY>"
+        echo ""
+        echo "  2. Ou si vous avez la clé maintenant:"
+        read -sp "     Entrez la clé de descellement (ENTRÉE pour annuler): " UNSEAL_KEY
+        echo ""
+        
+        if [ -n "$UNSEAL_KEY" ]; then
+            echo -e "${CYAN}🔓 Tentative de descellement...${NC}"
+            if vault operator unseal "$UNSEAL_KEY" &>/dev/null; then
+                echo -e "${GREEN}✅ Vault descellé avec succès${NC}"
+            else
+                echo -e "${RED}❌ Échec du descellement - clé invalide${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${RED}❌ Script annulé${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}❌ Impossible de se connecter à Vault${NC}"
+        exit 1
+    fi
+fi
+
+# Vérifier à nouveau après descellement potentiel
+if ! vault status &>/dev/null; then
+    echo -e "${RED}❌ Vault toujours inaccessible${NC}"
     exit 1
 fi
+
 echo -e "${GREEN}✅ Connexion à Vault OK${NC}"
 echo ""
 
@@ -204,13 +237,17 @@ else
     openssl genpkey -out private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:"$JWT_PASSPHRASE"
     openssl pkey -in private.pem -out public.pem -pubout -passin pass:"$JWT_PASSPHRASE"
     
-vault kv put secret/maison-epouvante/app \
-  APP_ENV="$APP_ENV" \
-  APP_SECRET="$APP_SECRET" \
-  DATABASE_URL="$DATABASE_URL" \
-  JWT_PASSPHRASE="$JWT_PASSPHRASE" \
-  JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
-  JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY
+    # Encoder en base64 pour Vault
+    JWT_PRIVATE_KEY=$(cat private.pem | base64 -w 0)
+    JWT_PUBLIC_KEY=$(cat public.pem | base64 -w 0)
+    
+    # Nettoyer
+    cd - > /dev/null
+    rm -rf "$TEMP_JWT_DIR"
+    
+    echo -e "${GREEN}✅ Clés JWT générées${NC}"
+fi
+
 echo ""
 echo -e "${CYAN}══════════════════════════════════${NC}"
 echo -e "${CYAN}     CORS Configuration${NC}"
@@ -261,17 +298,13 @@ echo -e "${CYAN}💾 Sauvegarde des secrets dans Vault...${NC}"
 # Construction de DATABASE_URL pour Symfony/Doctrine
 DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?serverVersion=${DB_VERSION}"
 
-# Chemins des clés JWT (générées au runtime par l'entrypoint)
-JWT_SECRET_KEY="/var/www/project/config/jwt/private.pem"
-JWT_PUBLIC_KEY="/var/www/project/config/jwt/public.pem"
-
 vault kv put secret/maison-epouvante/app \
   APP_ENV="$APP_ENV" \
   APP_SECRET="$APP_SECRET" \
   DATABASE_URL="$DATABASE_URL" \
-  JWT_SECRET_KEY="$JWT_SECRET_KEY" \
-  JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY" \
   JWT_PASSPHRASE="$JWT_PASSPHRASE" \
+  JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
+  JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY" \
   CORS_ALLOW_ORIGIN="$CORS_ALLOW_ORIGIN" \
   MAILER_DSN="$MAILER_DSN" \
   STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
