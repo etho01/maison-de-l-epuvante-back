@@ -20,20 +20,9 @@ spec:
         app: maison-epouvante-back
     spec:
       securityContext:
+        runAsNonRoot: true
+        runAsUser: 33
         fsGroup: 33
-      initContainers:
-        - name: generate-jwt-keys
-          image: ghcr.io/etho01/maison-epouvante-back:latest
-          command: ["/usr/local/bin/generate-jwt-keys.sh"]
-          securityContext:
-            runAsUser: 0  # Root nécessaire pour créer et chown les fichiers
-            runAsNonRoot: false
-          envFrom:
-            - secretRef:
-                name: maison-epouvante-back-secret
-          volumeMounts:
-            - name: jwt-keys
-              mountPath: /jwt-keys
       containers:
         - name: app
           image: ghcr.io/etho01/maison-epouvante-back:latest
@@ -61,6 +50,11 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
+          env:
+            - name: JWT_SECRET_KEY
+              value: /var/www/project/config/jwt/private.pem
+            - name: JWT_PUBLIC_KEY
+              value: /var/www/project/config/jwt/public.pem
           livenessProbe:
             httpGet:
               path: /api/health
@@ -77,4 +71,12 @@ spec:
               memory: "512Mi"
       volumes:
         - name: jwt-keys
-          emptyDir: {}
+          emptyDir: {}secret:
+            secretName: maison-epouvante-back-secret
+            items:
+              - key: JWT_PRIVATE_KEY
+                path: private.pem
+                mode: 0644
+              - key: JWT_PUBLIC_KEY
+                path: public.pem
+                mode: 0644

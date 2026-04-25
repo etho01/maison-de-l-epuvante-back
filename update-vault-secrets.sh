@@ -152,8 +152,65 @@ echo ""
 echo -e "${CYAN}══════════════════════════════════${NC}"
 echo -e "${CYAN}     JWT Authentication${NC}"
 echo -e "${CYAN}══════════════════════════════════${NC}"
-JWT_PASSPHRASE=$(ask_secret "JWT_PASSPHRASE" "Passphrase JWT (générez avec: openssl rand -base64 32)")
 
+# Vérifier si des clés JWT existent déjà dans Vault
+EXISTING_JWT_PRIVATE=$(get_current_value "JWT_PRIVATE_KEY")
+EXISTING_JWT_PUBLIC=$(get_current_value "JWT_PUBLIC_KEY")
+
+if [ -n "$EXISTING_JWT_PRIVATE" ] && [ "$EXISTING_JWT_PRIVATE" != "null" ]; then
+    echo -e "${GREEN}✅ Clés JWT existantes trouvées dans Vault${NC}"
+    read -p "   Voulez-vous les régénérer ? (o/N): " regenerate
+    
+    if [[ "$regenerate" =~ ^([oO][uU][iI]|[oO])$ ]]; then
+        echo -e "${YELLOW}🔐 Génération de nouvelles clés JWT...${NC}"
+        
+        # Demander la passphrase
+        read -sp "   JWT Passphrase (générez avec: openssl rand -base64 32): " JWT_PASSPHRASE
+        echo ""
+        
+        # Générer les clés dans un répertoire temporaire
+        TEMP_JWT_DIR=$(mktemp -d)
+        cd "$TEMP_JWT_DIR"
+        
+        openssl genpkey -out private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:"$JWT_PASSPHRASE"
+        openssl pkey -in private.pem -out public.pem -pubout -passin pass:"$JWT_PASSPHRASE"
+        
+        # Encoder en base64 pour Vault
+        JWT_PRIVATE_KEY=$(cat private.pem | base64 -w 0)
+        JWT_PUBLIC_KEY=$(cat public.pem | base64 -w 0)
+        
+        # Nettoyer
+        cd - > /dev/null
+        rm -rf "$TEMP_JWT_DIR"
+        
+        echo -e "${GREEN}✅ Nouvelles clés JWT générées${NC}"
+    else
+        echo -e "${CYAN}Conservation des clés JWT existantes${NC}"
+        JWT_PASSPHRASE=$(ask_secret "JWT_PASSPHRASE" "Passphrase JWT")
+        JWT_PRIVATE_KEY="$EXISTING_JWT_PRIVATE"
+        JWT_PUBLIC_KEY="$EXISTING_JWT_PUBLIC"
+    fi
+else
+    echo -e "${YELLOW}🔐 Aucune clé JWT trouvée, génération de nouvelles clés...${NC}"
+    
+    # Demander la passphrase
+    read -sp "   JWT Passphrase (générez avec: openssl rand -base64 32): " JWT_PASSPHRASE
+    echo ""
+    
+    # Générer les clés dans un répertoire temporaire
+    TEMP_JWT_DIR=$(mktemp -d)
+    cd "$TEMP_JWT_DIR"
+    
+    openssl genpkey -out private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -pass pass:"$JWT_PASSPHRASE"
+    openssl pkey -in private.pem -out public.pem -pubout -passin pass:"$JWT_PASSPHRASE"
+    
+vault kv put secret/maison-epouvante/app \
+  APP_ENV="$APP_ENV" \
+  APP_SECRET="$APP_SECRET" \
+  DATABASE_URL="$DATABASE_URL" \
+  JWT_PASSPHRASE="$JWT_PASSPHRASE" \
+  JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY" \
+  JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY
 echo ""
 echo -e "${CYAN}══════════════════════════════════${NC}"
 echo -e "${CYAN}     CORS Configuration${NC}"
