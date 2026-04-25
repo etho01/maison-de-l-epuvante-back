@@ -74,6 +74,12 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
+      - name: Install Vault CLI
+        run: |
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install -y vault
+
       - name: Check and install External Secrets Operator
         run: |
           # Vérifier si les CRDs d'ESO sont installés
