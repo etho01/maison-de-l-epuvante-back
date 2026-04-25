@@ -71,7 +71,7 @@ spec:
               memory: "512Mi"
       volumes:
         - name: jwt-keys
-          emptyDir: {}secret:
+          secret:
             secretName: maison-epouvante-back-secret
             items:
               - key: JWT_PRIVATE_KEY

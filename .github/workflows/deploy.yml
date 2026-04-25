@@ -141,8 +141,9 @@ jobs:
           # Activer l'auth Kubernetes si pas déjà fait
           vault auth list | grep -q "kubernetes/" || vault auth enable kubernetes
           
-          # Créer le ServiceAccount et son token
+          # Créer le ServiceAccount, son token et les permissions RBAC
           kubectl apply -f k8s/vault/serviceaccount.yaml
+          kubectl apply -f k8s/vault/rbac.yaml
           
           # Attendre le token
           for i in {1..30}; do
@@ -155,14 +156,15 @@ jobs:
           # Récupérer les credentials K8s
           SA_JWT_TOKEN=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.token}' | base64 -d)
           SA_CA_CRT=$(kubectl -n ${NAMESPACE} get secret vault-auth-token -o jsonpath='{.data.ca\.crt}' | base64 -d)
-          K8S_HOST=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[0].cluster.server}')
           
-          # Configurer Vault
+          # IMPORTANT: Utiliser l'URL interne du cluster (pas localhost)
+          K8S_INTERNAL_HOST="https://kubernetes.default.svc.cluster.local:443"
+          
+          # Configurer Vault avec l'URL interne
           vault write auth/kubernetes/config \
             token_reviewer_jwt="$SA_JWT_TOKEN" \
-            kubernetes_host="$K8S_HOST" \
-            kubernetes_ca_cert="$SA_CA_CRT" \
-            disable_local_ca_jwt="true"
+            kubernetes_host="$K8S_INTERNAL_HOST" \
+            kubernetes_ca_cert="$SA_CA_CRT"
           
           # Créer la policy
           vault policy write maison-epouvante-app - <<EOF
@@ -181,7 +183,7 @@ jobs:
             policies=maison-epouvante-app \
             ttl=24h
           
-          echo "✅ Vault configuré"
+          echo "✅ Vault configuré avec l'URL interne du cluster"
           
           # Cleanup
           kill $PF_PID 2>/dev/null || true
