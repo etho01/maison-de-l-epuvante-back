@@ -1,0 +1,234 @@
+name: Deploy cinegest-back to K3s
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: etho01/maison-de-l-epuvante-back
+  NAMESPACE: maison-de-l-epuvante
+  DEPLOYMENT_NAME: maison-de-l-epuvante-back
+  CONTAINER_NAME: app
+
+jobs:
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare metadata
+        id: meta
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/etho01/maison-de-l-epuvante-back:${{ steps.meta.outputs.image_tag }}
+            ghcr.io/etho01/maison-de-l-epuvante-back:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Check and install External Secrets Operator
+        run: |
+          # Vérifier si les CRDs d'ESO sont installés
+          if ! kubectl get crd secretstores.external-secrets.io &>/dev/null; then
+            echo "Installing External Secrets Operator..."
+            helm repo add external-secrets https://charts.external-secrets.io
+            helm repo update
+            helm upgrade --install external-secrets \
+              external-secrets/external-secrets \
+              --namespace external-secrets \
+              --create-namespace \
+              --set installCRDs=true \
+              --wait \
+              --timeout 5m
+            echo "✅ External Secrets Operator installed"
+          else
+            echo "✅ External Secrets Operator already present"
+          fi
+          
+          # Vérification finale : attendre que les CRDs soient disponibles (peu importe si déjà installé ou juste installé)
+          echo "Verifying CRDs availability..."
+          for i in {1..30}; do
+            if kubectl get crd secretstores.external-secrets.io externalsecrets.external-secrets.io &>/dev/null; then
+              echo "✅ External Secrets CRDs are ready"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Timeout waiting for ESO CRDs"
+              kubectl get crd | grep external-secrets || echo "No ESO CRDs found"
+              exit 1
+            fi
+            echo "Waiting for CRDs... ($i/30)"
+            sleep 2
+          done
+          
+          # Attendre que l'opérateur soit prêt
+          echo "Waiting for External Secrets operator deployment..."
+          kubectl wait --for=condition=available --timeout=300s \
+            deployment/external-secrets -n external-secrets 2>/dev/null || \
+            kubectl wait --for=condition=available --timeout=300s \
+              deployment/external-secrets-webhook -n external-secrets 2>/dev/null || true
+
+      - name: Deploy Vault integration
+        run: |
+          # Debug : vérifier que les CRDs sont bien là
+          echo "=== Debugging CRDs before deployment ==="
+          kubectl get crd | grep external-secrets || echo "⚠️ No ESO CRDs found!"
+          kubectl api-resources | grep secretstore || echo "⚠️ SecretStore not in API resources!"
+          echo "========================================"
+          
+          # Déployer les namespaces
+          kubectl apply -f k8s/namespace.yaml
+          
+          # Déployer le ServiceAccount pour Vault auth
+          kubectl apply -f k8s/vault/serviceaccount.yaml
+          
+          # Déployer SecretStore et ExternalSecret avec retry (au cas où les CRDs mettent du temps)
+          echo "Deploying Vault SecretStore..."
+          for i in {1..5}; do
+            if kubectl apply -f k8s/secretstore.yaml; then
+              echo "✅ SecretStore deployed"
+              break
+            fi
+            if [ $i -eq 5 ]; then
+              echo "❌ Failed to deploy SecretStore after 5 attempts"
+              exit 1
+            fi
+            echo "Retry $i/5 - waiting for CRDs to be fully available..."
+            sleep 5
+          done
+          
+          echo "Deploying Vault ExternalSecret..."
+          kubectl apply -f k8s/externalsecret.yaml
+          
+          echo "✅ Vault integration manifests deployed"
+
+      - name: Wait for secrets synchronization
+        run: |
+          echo "⏳ Waiting for secrets to sync from Vault..."
+          
+          # Attendre que l'ExternalSecret soit prêt (max 2 minutes)
+          for i in {1..60}; do
+            STATUS=$(kubectl -n ${NAMESPACE} get externalsecret cinegest-back-vault -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "")
+            
+            if [ "$STATUS" = "True" ]; then
+              echo "✅ Secrets synchronized from Vault"
+              kubectl -n ${NAMESPACE} get secret cinegest-back-secret
+              break
+            fi
+            
+            if [ $i -eq 60 ]; then
+              echo "⚠️ Timeout waiting for Vault secrets synchronization"
+              echo "Checking ExternalSecret status:"
+              kubectl -n ${NAMESPACE} describe externalsecret cinegest-back-vault || true
+              
+              # Vérifier si le secret existe quand même (manuel)
+              if kubectl -n ${NAMESPACE} get secret cinegest-back-secret &>/dev/null; then
+                echo "⚠️ Using existing manual secret (Vault not configured)"
+              else
+                echo "❌ No secret available - deployment will fail"
+                exit 1
+              fi
+            fi
+            
+            sleep 2
+          done
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/clusterissuer.yaml
+          kubectl apply -f k8s/middleware.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/hpa.yaml
+
+      - name: Update image
+        run: |
+          kubectl -n ${NAMESPACE} set image deployment/${DEPLOYMENT_NAME} \
+            ${CONTAINER_NAME}=ghcr.io/etho01/cinegest-back:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Save current deployment image
+        id: previous
+        run: |
+          PREVIOUS_IMAGE=$(kubectl -n ${NAMESPACE} get deployment ${DEPLOYMENT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}')
+          echo "image=$PREVIOUS_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Run migrations
+        id: migrate
+        run: |
+          kubectl -n ${NAMESPACE} delete job cinegest-back-migrate --ignore-not-found=true
+          sed "s|ghcr.io/etho01/cinegest-back:latest|ghcr.io/etho01/cinegest-back:${{ needs.build-and-push.outputs.image_tag }}|g" \
+            k8s/migrate-job.yaml | kubectl apply -f -
+          
+          if ! kubectl -n ${NAMESPACE} wait --for=condition=complete job/cinegest-back-migrate --timeout=300s; then
+            echo "Migration failed!"
+            kubectl -n ${NAMESPACE} logs job/cinegest-back-migrate --tail=50
+            exit 1
+          fi
+
+      - name: Wait rollout
+        id: rollout
+        run: |
+          if ! kubectl -n ${NAMESPACE} rollout status deployment/${DEPLOYMENT_NAME} --timeout=300s; then
+            echo "Deployment failed!"
+            kubectl -n ${NAMESPACE} describe deployment ${DEPLOYMENT_NAME}
+            kubectl -n ${NAMESPACE} logs -l app=cinegest-back --tail=50
+            exit 1
+          fi
+
+      - name: Rollback on failure
+        if: failure() && steps.previous.outputs.image != ''
+        run: |
+          echo "Rolling back to previous image: ${{ steps.previous.outputs.image }}"
+          kubectl -n ${NAMESPACE} set image deployment/${DEPLOYMENT_NAME} \
+            ${CONTAINER_NAME}=${{ steps.previous.outputs.image }}
+          kubectl -n ${NAMESPACE} rollout status deployment/${DEPLOYMENT_NAME} --timeout=300s

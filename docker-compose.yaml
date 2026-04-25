@@ -39,6 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     container_name: maison_epouvante_api
     ports:
       - "8901:443"
@@ -56,6 +57,7 @@ services:
         condition: service_healthy
     networks:
       - maison_epouvante
+    user: "1000:1000"
 
 networks:
   maison_epouvante:

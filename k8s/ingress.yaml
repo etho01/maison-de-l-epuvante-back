@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: maison-epouvante-back
+  namespace: maison-epouvante
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: maison-epouvante-ratelimit@kubernetescrd,maison-epouvante-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.maison-epouvante.nicolasbarbey.fr
+      secretName: api-maison-epouvante-tls
+  rules:
+    - host: api.maison-epouvante.nicolasbarbey.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: maison-epouvante-back
+                port:
+                  number: 80
