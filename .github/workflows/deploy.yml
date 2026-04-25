@@ -181,6 +181,13 @@ jobs:
             sleep 2
           done
 
+      - name: Save current deployment image
+        id: previous
+        continue-on-error: true
+        run: |
+          PREVIOUS_IMAGE=$(kubectl -n ${NAMESPACE} get deployment ${DEPLOYMENT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
+          echo "image=$PREVIOUS_IMAGE" >> $GITHUB_OUTPUT
+
       - name: Apply manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
@@ -193,12 +200,6 @@ jobs:
         run: |
           kubectl -n ${NAMESPACE} set image deployment/${DEPLOYMENT_NAME} \
             ${CONTAINER_NAME}=ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}
-
-      - name: Save current deployment image
-        id: previous
-        run: |
-          PREVIOUS_IMAGE=$(kubectl -n ${NAMESPACE} get deployment ${DEPLOYMENT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}')
-          echo "image=$PREVIOUS_IMAGE" >> $GITHUB_OUTPUT
 
       - name: Run migrations
         id: migrate
