@@ -43,25 +43,26 @@ spec:
             - name: jwt-keys
               mountPath: /var/www/project/config/jwt
               readOnly: true
-          readinessProbe:
-            httpGet:
-              path: /api/health
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
+          # Probes temporairement désactivées pour debug
+          # readinessProbe:
+          #   httpGet:
+          #     path: /api/health
+          #     port: 80
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 10
+          #   timeoutSeconds: 5
           env:
             - name: JWT_SECRET_KEY
               value: /var/www/project/config/jwt/private.pem
             - name: JWT_PUBLIC_KEY
               value: /var/www/project/config/jwt/public.pem
-          livenessProbe:
-            httpGet:
-              path: /api/health
-              port: 80
-            initialDelaySeconds: 30
-            periodSeconds: 20
-            timeoutSeconds: 5
+          # livenessProbe:
+          #   httpGet:
+          #     path: /api/health
+          #     port: 80
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 20
+          #   timeoutSeconds: 5
           resources:
             requests:
               cpu: "100m"
