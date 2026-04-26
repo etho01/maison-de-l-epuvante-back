@@ -19,8 +19,6 @@ spec:
       labels:
         app: maison-epouvante-back
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 33
