@@ -52,6 +52,10 @@ spec:
           #   periodSeconds: 10
           #   timeoutSeconds: 5
           env:
+            - name: APP_ENV
+              value: "prod"
+            - name: APP_DEBUG
+              value: "0"
             - name: JWT_SECRET_KEY
               value: /var/www/project/config/jwt/private.pem
             - name: JWT_PUBLIC_KEY
