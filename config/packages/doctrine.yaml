@@ -1,11 +1,11 @@
 doctrine:
     dbal:
         driver: 'pdo_mysql'
-        host: '51.75.20.192'
-        port: 3306
-        dbname: 'maisonEpouvante'
-        user: 'monuser'
-        password: 'secret'
+        host: '%env(DATABASE_HOST)%'
+        port: '%env(int:DATABASE_PORT)%'
+        dbname: '%env(DATABASE_NAME)%'
+        user: '%env(DATABASE_USER)%'
+        password: '%env(DATABASE_PASSWORD)%'
         server_version: 'mariadb-11.3.0'
         charset: utf8mb4
 
