@@ -121,12 +121,6 @@ RUN chmod +x bin/console \
 ENV APP_ENV=prod \
     APP_DEBUG=0
 
-# Warm up cache (skip if no .env file, it will be handled at runtime)
-RUN if [ -f .env ]; then \
-        composer run-script --no-dev post-install-cmd; \
-    else \
-        echo "Skipping post-install scripts (no .env file)"; \
-    fi
 
 # Use www-data user
 USER www-data
