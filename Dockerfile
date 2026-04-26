@@ -36,8 +36,7 @@ RUN set -eux; \
         libsasl2-dev \
         # Timezone
         tzdata \
-        # SSL
-        ssl-cert \
+        # SSL/TLS (for HTTPS requests)
         openssl \
     && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
     && echo "fr_FR.UTF-8 UTF-8" >> /etc/locale.gen \
@@ -74,8 +73,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 # Apache configuration
 RUN set -eux; \
     echo "ServerName localhost" >> /etc/apache2/apache2.conf \
-    && /usr/sbin/make-ssl-cert generate-default-snakeoil \
-    && a2enmod ssl rewrite headers \
+    && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Apache VirtualHost configuration
