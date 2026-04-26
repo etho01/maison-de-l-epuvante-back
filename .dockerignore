@@ -7,7 +7,6 @@
 !README.md
 
 # Environnement
-.env
 .env.*
 !.env.docker
 
