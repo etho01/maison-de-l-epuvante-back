@@ -112,7 +112,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --no-progress -
 # Copy application files
 COPY --chown=www-data:www-data . .
 
-# Set APP_ENV for build time (must be before cache operations)
+# Set APP_ENV for build time (must be before any Symfony operations)
 ENV APP_ENV=prod \
     APP_DEBUG=0
 
@@ -120,11 +120,6 @@ ENV APP_ENV=prod \
 RUN chmod +x bin/console \
     && mkdir -p var/cache var/log config/jwt \
     && chown -R www-data:www-data var config/jwt
-
-# Warm up Symfony cache in production mode (as root, then fix permissions)
-RUN php bin/console cache:clear --env=prod --no-debug --no-warmup \
-    && php bin/console cache:warmup --env=prod --no-debug \
-    && chown -R www-data:www-data var
 
 # Use www-data user
 USER www-data
