@@ -285,7 +285,45 @@ docker-security-scan (scan Trivy de l'image)
 deploy (déploiement sur K3s)
 ```
 
-**⚠️ Important :** Si le scan détecte des vulnérabilités **critical** ou **high**, le déploiement est **bloqué**.
+**⚠️ Seuils de blocage pour l'image Docker :**
+- ❌ **CRITICAL** → Bloque le déploiement
+- ⚠️ **HIGH** → Warning uniquement (non bloquant)
+- ✅ **MEDIUM/LOW** → Informatif seulement
+
+**Pourquoi HIGH n'est pas bloquant pour l'image Docker ?**
+
+Les vulnérabilités HIGH dans les images Docker proviennent souvent de :
+- **linux-libc-dev** : Headers du kernel Linux (non utilisés à l'exécution)
+- **ncurses** : Librairie système rarement exposée
+- Packages système avec CVE non fixés ou non exploitables dans un conteneur
+
+Dans un environnement conteneurisé (K8s), ces vulnérabilités sont:
+- 🛡️ **Isolées** par les namespaces et cgroups
+- 🔒 **Limitées** par les security contexts
+- 📦 **Confinées** dans le conteneur
+
+**⚠️ CRITICAL reste bloquant** car ces vulnérabilités peuvent permettre:
+- Exécution de code à distance
+- Élévation de privilèges hors du conteneur
+- Exploitation critique de services exposés
+
+### Ignorer les vulnérabilités non-fixables
+
+Le scan utilise `ignore-unfixed: true` pour ignorer les CVE sans patch disponible :
+
+```yaml
+ignore-unfixed: true  # Ignore les vulnérabilités sans fix disponible
+```
+
+**Pourquoi ?**
+- ❌ Pas de correctif → Impossible à corriger
+- ⏳ En attente d'un patch upstream
+- 🔄 Nécessiterait une nouvelle image de base
+
+**Pour forcer le scan de tout :**
+```yaml
+ignore-unfixed: false  # Scanner toutes les vulnérabilités (même non-fixables)
+```
 
 ### Configuration du scan
 

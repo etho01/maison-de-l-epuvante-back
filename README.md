@@ -415,12 +415,19 @@ En plus du scan du filesystem, **Trivy scanne également l'image Docker finale**
 ```
 Build Image → Scan Docker (Trivy) → Deploy K8s
                     ↓
-              Bloque si critical/high
+            Bloque si CRITICAL
+            Warning si HIGH
 ```
 
 **Résultats :** Uploadés vers **Security** → **Code scanning** (catégorie `trivy-docker-image`)
 
-**⚠️ Important :** Le déploiement est **bloqué** si des vulnérabilités critical/high sont trouvées dans l'image.
+**🛡️ Stratégie de sécurité pour l'image Docker :**
+- ❌ **CRITICAL** → Bloque le déploiement (exploitables, RCE, etc.)
+- ⚠️ **HIGH** → Warning uniquement (souvent dans linux-libc-dev, ncurses)
+- ✅ **MEDIUM/LOW** → Informatif
+- 🚫 **Non-fixables** → Ignorés automatiquement (`ignore-unfixed: true`)
+
+> **Note :** Les vulnérabilités HIGH dans les packages système (kernel headers, librairies) sont souvent non exploitables dans un environnement conteneurisé avec isolation (K8s namespaces, security contexts). Seules les CRITICAL bloquent le déploiement.
 
 ### Workflow automatique
 
