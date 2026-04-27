@@ -8,10 +8,11 @@
 ![API Platform](https://img.shields.io/badge/API%20Platform-4.2-38A3A5?logo=api&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-3C9CD7?logo=testing-library&logoColor=white)
+![SonarQube](https://img.shields.io/badge/Quality-SonarQube-4E9BCD?logo=sonarqube&logoColor=white)
 
 **API REST moderne et complète développée avec Symfony 7.4 et API Platform**
 
-[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Architecture](#-architecture)
+[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Qualité du code](#-qualité-du-code) • [CI/CD](#-cicd) • [Architecture](#-architecture)
 
 </div>
 
@@ -267,7 +268,51 @@ Le projet inclut **16 suites de tests** :
 - ✅ Tests e-commerce (produits, catégories, commandes)
 
 ---
+## 🔍 Qualité du code
 
+Le projet utilise **SonarQube** pour l'analyse statique du code et la mesure de la qualité.
+
+### Analyser localement
+
+```bash
+# Avec Docker (recommandé)
+./sonar-scan.sh
+
+# Le script va :
+# 1. Exécuter les tests avec couverture
+# 2. Envoyer les résultats à SonarQube
+# 3. Afficher l'URL des résultats
+```
+
+### Configuration requise
+
+1. **Démarrer SonarQube** :
+```bash
+docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
+```
+
+2. **Configurer le token** :
+```bash
+export SONAR_TOKEN=votre_token_ici
+export SONAR_HOST_URL=http://localhost:9000
+```
+
+3. **Lancer l'analyse** :
+```bash
+./sonar-scan.sh
+```
+
+### Métriques suivies
+
+- 🐛 **Bugs** : Problèmes de logique
+- 🔒 **Vulnerabilities** : Failles de sécurité
+- 🧹 **Code Smells** : Problèmes de maintenabilité
+- 📊 **Coverage** : Couverture de code (objectif: > 80%)
+- 📋 **Duplications** : Code dupliqué (objectif: < 3%)
+
+📖 **Documentation complète** : Voir [SONARQUBE.md](SONARQUBE.md)
+
+---
 ## � CI/CD
 
 Le projet utilise **GitHub Actions** pour l'intégration et le déploiement continus.
@@ -284,6 +329,15 @@ Le projet utilise **GitHub Actions** pour l'intégration et le déploiement cont
   - Génération du rapport de couverture de code
   - Upload des résultats vers Codecov
   - Vérification de la qualité du code (syntaxe PHP)
+
+#### � Analyse SonarQube (`.github/workflows/sonarqube.yml`)
+- **Déclenché sur** : Push sur `main`/`develop`, Pull Requests vers `main`
+- **Actions** :
+  - Installation des dépendances et setup de l'environnement
+  - Exécution des tests avec couverture de code
+  - Analyse SonarQube complète
+  - Quality Gate check (peut bloquer si échec)
+  - Upload des rapports de couverture
 
 #### 🚀 Déploiement en production (`.github/workflows/deploy.yml`)
 - **Déclenché sur** : Push sur la branche `main`
@@ -304,6 +358,8 @@ Pour que les workflows fonctionnent, assurez-vous d'avoir configuré ces secrets
 ```
 GITHUB_TOKEN          # Automatiquement fourni par GitHub Actions
 KUBECONFIG_B64        # Configuration kubectl encodée en base64
+SONAR_TOKEN           # Token d'authentification SonarQube
+SONAR_HOST_URL        # URL du serveur SonarQube
 ```
 
 ### Exécution locale des tests CI
