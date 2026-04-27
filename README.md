@@ -9,10 +9,11 @@
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-3C9CD7?logo=testing-library&logoColor=white)
 ![SonarQube](https://img.shields.io/badge/Quality-SonarQube-4E9BCD?logo=sonarqube&logoColor=white)
+![Security](https://img.shields.io/badge/Security-Composer%20Audit-success?logo=security&logoColor=white)
 
 **API REST moderne et complète développée avec Symfony 7.4 et API Platform**
 
-[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Qualité du code](#-qualité-du-code) • [CI/CD](#-cicd) • [Architecture](#-architecture)
+[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Qualité du code](#-qualité-du-code) • [Sécurité](#-sécurité) • [CI/CD](#-cicd) • [Architecture](#-architecture)
 
 </div>
 
@@ -313,7 +314,153 @@ export SONAR_HOST_URL=http://localhost:9000
 📖 **Documentation complète** : Voir [SONARQUBE.md](SONARQUBE.md)
 
 ---
-## � CI/CD
+
+## 🔒 Sécurité
+
+Le projet intègre une **analyse automatique de sécurité complète** pour détecter les vulnérabilités.
+
+### Analyser localement
+
+```bash
+# Analyser les vulnérabilités et packages obsolètes
+./security-scan.sh
+
+# Le script va :
+# 1. Analyser les vulnérabilités (composer audit)
+# 2. Vérifier les packages obsolètes (composer outdated)
+# 3. Scanner avec Trivy (vulnérabilités, secrets, configs)
+# 4. Générer des rapports détaillés
+# 5. Bloquer si vulnérabilités critiques/hautes ou secrets
+```
+
+### Types d'analyses
+
+#### 🔍 Analyse des vulnérabilités PHP
+
+Utilise **`composer audit`** pour détecter les CVE connus dans les dépendances PHP.
+
+**Exemple de sortie :**
+```
+🔒 Vulnérabilités : 3
+   🔴 Critical: 1
+   🟠 High: 1
+   🟡 Medium: 1
+
+• symfony/http-kernel (high)
+  Symfony HTTP kernel vulnerable to cache poisoning
+  CVE: CVE-2023-46733 | Fix: 5.4.31
+```
+
+#### 📦 Vérification des packages obsolètes
+
+Liste tous les packages qui peuvent être mis à jour.
+
+**Exemple de sortie :**
+```
+📦 Packages obsolètes : 8
+
+• symfony/console: 7.0.1 → 7.0.7
+• doctrine/orm: 3.0.0 → 3.1.2
+...
+
+💡 Pour mettre à jour :
+composer update --with-dependencies
+```
+
+#### 🛡️ Scan de sécurité complet (Trivy)
+
+Utilise **Trivy** (Aqua Security) pour un scan de sécurité complet du projet.
+
+**Ce que Trivy détecte :**
+- 🐛 Vulnérabilités dans les dépendances (toutes langues)
+- 🔐 Secrets hardcodés (API keys, tokens, passwords)
+- ⚙️ Problèmes de configuration (Dockerfile, YAML, etc.)
+- 📜 Licences non conformes
+
+**Exemple de sortie :**
+```
+🛡️ Trivy : 15 vulnérabilités
+   🔴 Critical: 2
+   🟠 High: 5
+   🔐 Secrets: 0
+
+• symfony/http-kernel (CVE-2023-46733) - CRITICAL
+  HTTP kernel vulnerable to cache poisoning
+  
+• guzzlehttp/psr7 (CVE-2023-29197) - HIGH
+  Improper header validation
+```
+
+**Upload vers GitHub Security :**
+
+Les résultats Trivy sont automatiquement uploadés vers **Security** → **Code scanning** où vous pouvez :
+- Voir les vulnérabilités annotées sur le code
+- Filtrer par sévérité
+- Suivre l'historique des scans
+- Recevoir des alertes automatiques
+
+### Workflow automatique
+
+Le workflow **`.github/workflows/security-scan.yml`** s'exécute :
+- ✅ Sur chaque push (sauf `main`)
+- ✅ Sur chaque pull request vers `main`
+- ✅ **Quotidiennement** à 2h du matin (analyse planifiée)
+
+**Actions automatiques :**
+- Génération de rapports de sécurité (Composer + Trivy)
+- Commentaires automatiques sur les PR
+- Upload des artefacts (rapports JSON)
+- **Blocage du CI/CD** si vulnérabilités critiques/hautes
+- Affichage d'un résumé dans GitHub Actions
+- Upload vers GitHub Security / Code Scanning (Trivy)
+
+### Seuils de blocage
+
+Le workflow **bloque** si :
+- ❌ Vulnérabilités **critical** détectées (Composer ou Trivy)
+- ❌ Vulnérabilités **high** détectées (Composer ou Trivy)
+- ❌ Secrets **critical/high** détectés (Trivy)
+
+Le workflow **continue** si :
+- ✅ Vulnérabilités **medium** ou **low** uniquement
+- ✅ Packages obsolètes détectés
+- ✅ Aucun problème détecté
+
+### Outils utilisés
+
+- **composer audit** : Détection des CVE dans les dépendances PHP
+- **composer outdated** : Liste des packages obsolètes
+- **Trivy** : Scanner de sécurité complet (vulns, secrets, configs)
+- **PHP Security Advisories Database** : Base de données de vulnérabilités
+- **GitHub Security / Code Scanning** : Intégration native GitHub
+
+### Bonnes pratiques
+
+1. **Exécutez localement** avant de pousser :
+   ```bash
+   ./security-scan.sh
+   ```
+
+2. **Consultez les rapports** dans GitHub Actions (onglet "Artifacts")
+
+3. **Mettez à jour régulièrement** :
+   ```bash
+   composer update --with-dependencies
+   composer audit
+   ```
+
+4. **Priorisez** : Corrigez d'abord les critical/high
+
+5. **Testez après mise à jour** :
+   ```bash
+   ./run-tests.sh
+   ```
+
+📖 **Documentation complète** : Voir [SECURITY_SCAN.md](SECURITY_SCAN.md)
+
+---
+
+## 🔄 CI/CD
 
 Le projet utilise **GitHub Actions** pour l'intégration et le déploiement continus.
 
@@ -339,7 +486,23 @@ Le projet utilise **GitHub Actions** pour l'intégration et le déploiement cont
   - Quality Gate check (peut bloquer si échec)
   - Upload des rapports de couverture
 
-#### 🚀 Déploiement en production (`.github/workflows/deploy.yml`)
+#### � Analyse de sécurité (`.github/workflows/security-scan.yml`)
+- **Déclenché sur** : Push (sauf `main`), Pull Requests vers `main`, quotidiennement à 2h
+- **Actions** :
+  - **Job 1 - Vulnérabilités** :
+    - Analyse avec `composer audit` (détection CVE)
+    - Génération de rapport de sécurité détaillé
+    - Commentaires automatiques sur les PR
+    - **Blocage si vulnérabilités critical/high**
+    - Upload des artefacts (rapports JSON + Markdown)
+  - **Job 2 - Packages obsolètes** :
+    - Vérification avec `composer outdated`
+    - Liste des packages à mettre à jour
+    - Rapport avec versions disponibles
+- **Artefacts** : Rapports conservés 30 jours
+- **Résumé** : Tableau par sévérité dans GitHub Actions
+
+#### �🚀 Déploiement en production (`.github/workflows/deploy.yml`)
 - **Déclenché sur** : Push sur la branche `main`
 - **Actions** :
   1. **Tests** : Exécution complète de la suite de tests (bloque le déploiement si échec)

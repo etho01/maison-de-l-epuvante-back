@@ -1,6 +1,39 @@
 # SonarQube Configuration
 
-## 📋 Prérequis
+## � Guide de démarrage rapide (GitHub Actions)
+
+Si le workflow GitHub Actions échoue avec l'erreur **"You're not authorized to analyze this project"**, suivez ces étapes :
+
+### ✅ Checklist rapide
+
+1. **Le projet existe-t-il dans SonarQube ?**
+   - ❌ Non → Créez-le manuellement (voir étape 2 ci-dessous)
+   - ✅ Oui → Vérifiez les secrets GitHub (étape 3)
+
+2. **Créer le projet dans SonarQube**
+   ```
+   1. Connexion à SonarQube (https://votre-sonarqube.com)
+   2. "Create Project" → "Manually"
+   3. Project key: maison-de-lepouvante-back (EXACT)
+   4. Display name: Maison de l'Épouvante - Backend API
+   5. "Set Up"
+   ```
+
+3. **Vérifier les secrets GitHub**
+   ```
+   Repository Settings → Secrets and variables → Actions
+   
+   ✅ SONAR_TOKEN existe ? (commence par sqp_)
+   ✅ SONAR_HOST_URL existe ? (URL complète du serveur)
+   ```
+
+4. **Re-déclencher le workflow**
+   - Faire un nouveau commit
+   - Ou "Re-run all jobs" dans GitHub Actions
+
+---
+
+## �📋 Prérequis
 
 ### Option 1 : Utiliser Docker (recommandé)
 - Docker installé et fonctionnel
@@ -25,13 +58,36 @@ Attendez que SonarQube démarre (environ 2-3 minutes), puis accédez à http://l
 - Username: `admin`
 - Password: `admin` (vous serez invité à le changer)
 
-### 2. Créer un token d'authentification
+### 2. Créer le projet dans SonarQube
+
+**⚠️ IMPORTANT** : Vous devez créer le projet avant la première analyse, sinon vous obtiendrez l'erreur :
+```
+ERROR You're not authorized to analyze this project or the project doesn't exist
+```
+
+1. Connectez-vous à SonarQube (http://localhost:9000)
+2. Cliquez sur **"Create Project"** (bouton en haut à droite)
+3. Choisissez **"Manually"**
+4. Remplissez les informations :
+   - **Project key** : `maison-de-lepouvante-back` (doit correspondre à sonar-project.properties)
+   - **Display name** : `Maison de l'Épouvante - Backend API`
+   - **Main branch name** : `main`
+5. Cliquez sur **"Set Up"**
+6. Choisissez **"Locally"** → **"Generate a token"**
+7. Copiez le token généré
+
+### 3. Créer un token d'authentification (si déjà fait lors de la création du projet)
+
+Si vous avez déjà créé le projet, vous pouvez créer un nouveau token :
 
 1. Allez dans **My Account** → **Security** → **Generate Tokens**
-2. Créez un token nommé `maison-epouvante-back`
-3. Copiez le token généré
+2. Créez un token nommé `maison-epouvante-back-ci`
+3. **Type** : Choisissez **"Global Analysis Token"** (permet de scanner tous les projets)
+4. **Expires in** : Choisissez la durée (30 jours, 90 jours, ou "No expiration")
+5. Cliquez sur **"Generate"**
+6. Copiez le token généré (commence par `sqp_`)
 
-### 3. Configurer les secrets
+### 4. Configurer les variables d'environnement
 
 ```bash
 # Définir le token (à faire dans chaque session)
@@ -48,7 +104,7 @@ echo 'export SONAR_HOST_URL=http://localhost:9000' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 4. Lancer l'analyse locale
+### 5. Lancer l'analyse locale
 
 ```bash
 # Rendre le script exécutable (première fois seulement)
@@ -74,10 +130,35 @@ Une fois l'analyse terminée, ouvrez :
 ## 🔄 CI/CD avec GitHub Actions
 
 Le workflow `.github/workflows/sonarqube.yml` s'exécute automatiquement sur :
-- Push vers `main` ou `develop`
-- Pull Requests vers `main`
+- Push vers toutes les branches **sauf `main`**
+- Idéal pour vérifier la qualité avant de merger
 
-### Configuration des secrets GitHub
+### ⚠️ Configuration OBLIGATOIRE avant la première exécution
+
+**Étape 1 : Créer le projet dans SonarQube**
+
+Le projet **DOIT exister** dans SonarQube avant d'exécuter le workflow, sinon vous aurez l'erreur :
+```
+ERROR You're not authorized to analyze this project or the project doesn't exist
+```
+
+1. Connectez-vous à votre serveur SonarQube
+2. **Create Project** → **Manually**
+3. **Project key** : `maison-de-lepouvante-back` ⚠️ **Doit être exactement ce nom**
+4. **Display name** : `Maison de l'Épouvante - Backend API`
+5. Cliquez sur **"Set Up"**
+
+**Étape 2 : Générer un token**
+
+1. Dans SonarQube, allez dans **Administration** → **Security** → **Users**
+2. Cliquez sur le token icon pour votre utilisateur
+3. **Generate Token** :
+   - **Name** : `github-actions-maison-epouvante`
+   - **Type** : **Global Analysis Token**
+   - **Expires in** : 90 days (ou "No expiration" pour prod)
+4. Copiez le token (commence par `sqp_`)
+
+**Étape 3 : Configurer les secrets GitHub**
 
 Allez dans **Settings** → **Secrets and variables** → **Actions** et ajoutez :
 
@@ -116,6 +197,35 @@ Les dossiers suivants sont exclus de l'analyse :
 - `migrations/` - Migrations de base de données
 
 ## 🐛 Dépannage
+
+### "You're not authorized to analyze this project" ⚠️ ERREUR FRÉQUENTE
+
+Cette erreur signifie que le projet n'existe pas dans SonarQube ou que votre token n'a pas les bonnes permissions.
+
+**Solution 1 : Créer le projet manuellement (RECOMMANDÉ)**
+
+1. Connectez-vous à SonarQube (http://localhost:9000 ou votre serveur)
+2. Cliquez sur **"Create Project"** → **"Manually"**
+3. **Project key** : `maison-de-lepouvante-back` (doit correspondre exactement)
+4. **Display name** : `Maison de l'Épouvante - Backend API`
+5. Cliquez sur **"Set Up"** → **"Locally"**
+6. Générez un nouveau token si nécessaire
+
+**Solution 2 : Vérifier les permissions du token**
+
+Si le projet existe déjà, vérifiez que votre token a les bonnes permissions :
+
+1. Allez dans **My Account** → **Security** → **Tokens**
+2. Vérifiez que votre token est de type **"Global Analysis Token"**
+3. Si c'est un **"Project Analysis Token"**, créez-en un nouveau de type "Global"
+
+**Solution 3 : Pour GitHub Actions**
+
+1. Créez le projet manuellement dans SonarQube (voir Solution 1)
+2. Vérifiez que les secrets GitHub sont bien configurés :
+   - `SONAR_TOKEN` : Token valide commençant par `sqp_`
+   - `SONAR_HOST_URL` : URL complète (ex: `https://sonarqube.example.com`)
+3. Re-déclenchez le workflow
 
 ### "sonar-scanner not found"
 

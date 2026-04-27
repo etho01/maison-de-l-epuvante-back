@@ -17,13 +17,22 @@ jobs:
   code-quality:
     uses: ./.github/workflows/code-quality.yml
         
+  security-scan:
+    uses: ./.github/workflows/security-scan.yml
+    permissions:
+      security-events: write
+      contents: read
 
   test:
-    needs: code-quality
+    needs: [code-quality, security-scan]
     uses: ./.github/workflows/test.yml
 
-  build-and-push:
+  sonarqube:
     needs: test
+    uses: ./.github/workflows/sonarqube.yml
+
+  build-and-push:
+    needs: sonarqube
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -8,8 +8,13 @@ on:
 jobs:
     code-quality:
         uses: ./.github/workflows/code-quality.yml
+    
+    security-scan:
+        uses: ./.github/workflows/security-scan.yml
+        permissions:
+          security-events: write
+          contents: read
         
-
     test:
-        needs: code-quality
+        needs: [code-quality, security-scan]
         uses: ./.github/workflows/test.yml
