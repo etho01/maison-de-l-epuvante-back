@@ -22,6 +22,7 @@ jobs:
     permissions:
       security-events: write
       contents: read
+      actions: read
 
   test:
     needs: [code-quality, security-scan]
