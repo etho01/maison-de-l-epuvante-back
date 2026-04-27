@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-composer-
       
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --no-dev
+        run: composer install --prefer-dist --no-progress --no-interaction --no-dev --no-scripts
       
       - name: Run Composer Audit (Check vulnerabilities)
         id: composer-audit
@@ -218,7 +218,7 @@ jobs:
           coverage: none
       
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        run: composer install --prefer-dist --no-progress --no-interaction --no-dev --no-scripts
       
       - name: Check outdated packages
         id: outdated
