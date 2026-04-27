@@ -254,7 +254,117 @@ Tous les rapports sont sauvegardés pendant **30 jours** :
 - `trivy-results.json` : Données brutes JSON (vulns, secrets, configs)
 - `trivy-fs-results.sarif` : Format SARIF pour GitHub Security
 
-## 💬 Commentaires automatiques sur les PR
+## � Scan de l'Image Docker (Déploiement)
+
+En plus du scan du système de fichiers, **Trivy scanne également l'image Docker** dans le workflow de déploiement (`action-deploy.yml`).
+
+### Quand ce scan s'exécute
+
+- ✅ **Après** la construction et le push de l'image Docker (job `build-and-push`)
+- ✅ **Avant** le déploiement sur Kubernetes (job `deploy`)
+- ✅ Uniquement sur les **pushs vers la branche `main`**
+
+### Ce qui est scanné
+
+Le job `docker-security-scan` analyse l'image Docker complète :
+
+| Type de scan | Description |
+|--------------|-------------|
+| **Vulnérabilités OS** | Packages système (Alpine, Debian, Ubuntu, etc.) |
+| **Vulnérabilités applicatives** | Dépendances PHP dans l'image |
+| **Secrets** | Credentials hardcodés dans les couches Docker |
+| **Configurations** | Best practices Docker |
+
+### Architecture du scan
+
+```
+build-and-push (construit l'image)
+       ↓
+docker-security-scan (scan Trivy de l'image)
+       ↓
+deploy (déploiement sur K3s)
+```
+
+**⚠️ Important :** Si le scan détecte des vulnérabilités **critical** ou **high**, le déploiement est **bloqué**.
+
+### Configuration du scan
+
+```yaml
+- name: Run Trivy vulnerability scanner on Docker image
+  uses: aquasecurity/trivy-action@master
+  with:
+    scan-type: 'image'  # Scan d'une image Docker
+    image-ref: 'ghcr.io/etho01/maison-de-l-epuvante-back:${IMAGE_TAG}'
+    format: 'sarif'
+    severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+    scanners: 'vuln,secret'
+```
+
+### Résultats du scan Docker
+
+Le scan génère :
+
+1. **GitHub Security** : Résultats uploadés vers **Security** → **Code scanning**
+   - Catégorie : `trivy-docker-image`
+   - Annotations sur les vulnérabilités
+   - Filtrage par sévérité
+
+2. **Résumé GitHub Actions** : Tableau des vulnérabilités par sévérité
+   ```
+   ### 🐳 Scan Docker Image - Trivy
+   
+   Image: ghcr.io/etho01/maison-de-l-epuvante-back:abc123
+   
+   | Sévérité    | Nombre |
+   |-------------|--------|
+   | 🔴 Critical | 0      |
+   | 🟠 High     | 2      |
+   | 🟡 Medium   | 8      |
+   | 🟢 Low      | 15     |
+   | Total       | 25     |
+   ```
+
+3. **Artefacts** (30 jours) :
+   - `trivy-docker-results.json` : Données brutes
+   - `trivy-docker-results.sarif` : Format GitHub Security
+
+### Différence : Filesystem vs Docker Image
+
+| Aspect | Scan Filesystem (`security-scan.yml`) | Scan Docker Image (`action-deploy.yml`) |
+|--------|---------------------------------------|----------------------------------------|
+| **Quand** | À chaque commit/PR | Avant chaque déploiement |
+| **Cible** | Code source + composer.lock | Image Docker finale |
+| **Couverture** | Dépendances PHP, secrets, configs | OS packages + dépendances + couches Docker |
+| **Bloque** | PR/merge | Déploiement |
+| **Scanners** | vuln, secret, config | vuln, secret |
+| **Intégration** | GitHub Security (trivy-filesystem) | GitHub Security (trivy-docker-image) |
+
+### Pourquoi scanner l'image Docker ?
+
+1. **Vulnérabilités système** : L'image de base (PHP, Alpine, etc.) peut avoir des CVE
+2. **Dépendances runtime** : Extensions PHP compilées, libs système
+3. **Couches Docker** : Secrets accidentellement copiés dans l'image
+4. **Conformité** : S'assurer qu'aucune image vulnérable n'est déployée en production
+
+### Exemple de vulnérabilités détectées
+
+```json
+{
+  "Target": "ghcr.io/etho01/maison-de-l-epuvante-back:latest (alpine 3.19.1)",
+  "Vulnerabilities": [
+    {
+      "VulnerabilityID": "CVE-2024-1234",
+      "PkgName": "libcrypto3",
+      "InstalledVersion": "3.1.4-r5",
+      "FixedVersion": "3.1.4-r6",
+      "Severity": "HIGH",
+      "Title": "OpenSSL vulnerability allowing remote code execution"
+    }
+  ]
+}
+```
+
+## �💬 Commentaires automatiques sur les PR
 
 Sur chaque Pull Request, **3 commentaires automatiques** sont créés/mis à jour avec :
 

@@ -72,8 +72,123 @@ jobs:
             ghcr.io/etho01/maison-de-l-epuvante-back:${{ steps.meta.outputs.image_tag }}
             ghcr.io/etho01/maison-de-l-epuvante-back:latest
 
-  deploy:
+  docker-security-scan:
+    name: Scan Docker Image with Trivy
     needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    permissions:
+      security-events: write
+      contents: read
+      packages: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Run Trivy vulnerability scanner on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}'
+          format: 'sarif'
+          output: 'trivy-docker-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0'
+          scanners: 'vuln,secret'
+      
+      - name: Run Trivy on Docker image (JSON for reporting)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}'
+          format: 'json'
+          output: 'trivy-docker-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0'
+          scanners: 'vuln,secret'
+      
+      - name: Upload Trivy Docker results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-docker-results.sarif'
+          category: 'trivy-docker-image'
+      
+      - name: Analyze Trivy Docker results
+        id: analyze
+        run: |
+          if [ -f trivy-docker-results.json ]; then
+            CRITICAL=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+            HIGH=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+            MEDIUM=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length')
+            LOW=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length')
+            
+            echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+            echo "high=$HIGH" >> $GITHUB_OUTPUT
+            echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+            echo "low=$LOW" >> $GITHUB_OUTPUT
+            
+            TOTAL=$(($CRITICAL + $HIGH + $MEDIUM + $LOW))
+            
+            echo "### 🐳 Scan Docker Image - Trivy" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Image:** \`ghcr.io/etho01/maison-de-l-epuvante-back:${{ needs.build-and-push.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Sévérité | Nombre |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟢 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **$TOTAL** |" >> $GITHUB_STEP_SUMMARY
+            
+            # Afficher les top vulnérabilités critiques/hautes
+            if [ $(($CRITICAL + $HIGH)) -gt 0 ]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "#### 🚨 Top vulnérabilités critiques/hautes" >> $GITHUB_STEP_SUMMARY
+              cat trivy-docker-results.json | jq -r '
+                [.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" or .Severity == "HIGH")] |
+                sort_by(.Severity) | reverse | .[0:10] |
+                .[] | "- **" + .VulnerabilityID + "** (" + .Severity + ") - `" + .PkgName + "`: " + .Title
+              ' >> $GITHUB_STEP_SUMMARY || true
+            fi
+          fi
+      
+      - name: Upload Docker scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-docker-scan-results
+          path: |
+            trivy-docker-results.json
+            trivy-docker-results.sarif
+          retention-days: 30
+      
+      - name: Check for critical/high vulnerabilities
+        run: |
+          if [ -f trivy-docker-results.json ]; then
+            CRITICAL=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+            HIGH=$(cat trivy-docker-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+            
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "::error::❌ L'image Docker contient $CRITICAL vulnérabilité(s) critique(s) et $HIGH haute(s)"
+              echo "::error::Consultez les artefacts ou GitHub Security pour plus de détails"
+              exit 1
+            else
+              echo "✅ Aucune vulnérabilité critique/haute détectée dans l'image Docker"
+            fi
+          fi
+
+  deploy:
+    needs: [build-and-push, docker-security-scan]
     runs-on: ubuntu-latest
 
     steps:

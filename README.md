@@ -399,6 +399,29 @@ Les résultats Trivy sont automatiquement uploadés vers **Security** → **Code
 - Suivre l'historique des scans
 - Recevoir des alertes automatiques
 
+#### 🐳 Scan de l'image Docker (Déploiement)
+
+En plus du scan du filesystem, **Trivy scanne également l'image Docker finale** lors du déploiement.
+
+**Quand :** Avant chaque déploiement sur Kubernetes (workflow `action-deploy.yml`)
+
+**Ce qui est scanné :**
+- 📦 Packages système de l'image de base (Alpine/Debian)
+- 🔐 Vulnérabilités dans les extensions PHP compilées
+- 🚨 Secrets accidentellement copiés dans les couches Docker
+- ⚙️ Configuration de l'image Docker
+
+**Pipeline :**
+```
+Build Image → Scan Docker (Trivy) → Deploy K8s
+                    ↓
+              Bloque si critical/high
+```
+
+**Résultats :** Uploadés vers **Security** → **Code scanning** (catégorie `trivy-docker-image`)
+
+**⚠️ Important :** Le déploiement est **bloqué** si des vulnérabilités critical/high sont trouvées dans l'image.
+
 ### Workflow automatique
 
 Le workflow **`.github/workflows/security-scan.yml`** s'exécute :
