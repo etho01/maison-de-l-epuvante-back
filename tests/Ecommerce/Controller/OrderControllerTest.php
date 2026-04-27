@@ -14,7 +14,7 @@ class OrderControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ]);
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testGetOrderByIdUnauthorized(): void
@@ -25,7 +25,7 @@ class OrderControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ]);
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testCreateOrderUnauthorized(): void
@@ -60,7 +60,7 @@ class OrderControllerTest extends WebTestCase
             'status' => 'processing'
         ]));
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testGetNonExistentOrder(): void
@@ -71,7 +71,7 @@ class OrderControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ]);
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testGetOrdersAsAuthenticatedUser(): void

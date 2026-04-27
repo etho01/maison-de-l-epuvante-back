@@ -1,0 +1,15 @@
+name: Tests
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+    code-quality:
+        uses: ./.github/workflows/code-quality.yml
+        
+
+    test:
+        needs: code-quality
+        uses: ./.github/workflows/test.yml

@@ -268,7 +268,90 @@ Le projet inclut **16 suites de tests** :
 
 ---
 
-## 🔐 Sécurité
+## � CI/CD
+
+Le projet utilise **GitHub Actions** pour l'intégration et le déploiement continus.
+
+### Workflows disponibles
+
+#### 🧪 Tests automatiques (`.github/workflows/test.yml`)
+- **Déclenché sur** : Pull Requests vers `main`, push sur `develop` et branches `feature/*`
+- **Actions** :
+  - Installation des dépendances PHP
+  - Configuration de l'environnement de test avec SQLite
+  - Génération des clés JWT
+  - Exécution de tous les tests PHPUnit
+  - Génération du rapport de couverture de code
+  - Upload des résultats vers Codecov
+  - Vérification de la qualité du code (syntaxe PHP)
+
+#### 🚀 Déploiement en production (`.github/workflows/deploy.yml`)
+- **Déclenché sur** : Push sur la branche `main`
+- **Actions** :
+  1. **Tests** : Exécution complète de la suite de tests (bloque le déploiement si échec)
+  2. **Build** : Construction de l'image Docker et push vers GHCR
+  3. **Deploy** : Déploiement sur le cluster K3s avec :
+     - Configuration du SecretStore Vault
+     - Synchronisation des secrets depuis Vault
+     - Exécution des migrations de base de données
+     - Rollout progressif avec vérification de santé
+     - Rollback automatique en cas d'échec
+
+### Configuration requise
+
+Pour que les workflows fonctionnent, assurez-vous d'avoir configuré ces secrets GitHub :
+
+```
+GITHUB_TOKEN          # Automatiquement fourni par GitHub Actions
+KUBECONFIG_B64        # Configuration kubectl encodée en base64
+```
+
+### Exécution locale des tests CI
+
+Pour reproduire l'environnement CI localement :
+
+```bash
+# Créer le fichier .env.test
+cat > .env.test << EOF
+KERNEL_CLASS='App\Kernel'
+APP_SECRET='test-secret-for-ci'
+DATABASE_URL="sqlite:///%kernel.project_dir%/var/test.db"
+CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+DEFAULT_URI=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
+JWT_PASSPHRASE=test-passphrase
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+MAILER_DSN=null://null
+STRIPE_SECRET_KEY=sk_test_mock_key
+EOF
+
+# Générer les clés JWT
+openssl genrsa -out config/jwt/private.pem -aes256 -passout pass:test-passphrase 4096
+openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem -passin pass:test-passphrase
+
+# Installer les dépendances
+composer install
+
+# Nettoyer le cache
+php bin/console cache:clear --env=test
+
+# Lancer les tests
+php bin/phpunit
+```
+
+### Badges de statut
+
+Vous pouvez ajouter ces badges à votre README :
+
+```markdown
+![Tests](https://github.com/VOTRE_USERNAME/maison-de-lepouvante/workflows/Tests/badge.svg)
+![Deploy](https://github.com/VOTRE_USERNAME/maison-de-lepouvante/workflows/Deploy/badge.svg)
+```
+
+---
+
+## �🔐 Sécurité
 
 ### Authentification
 - 🔒 **Mots de passe hashés** avec l'algorithme `bcrypt` (auto)
