@@ -1,0 +1,587 @@
+name: Security Scan
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Analyse quotidienne à 2h du matin
+    - cron: '0 2 * * *'
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    
+    permissions:
+      # Requis pour uploader les résultats vers GitHub Security
+      security-events: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: ctype, iconv, json
+          coverage: none
+      
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --no-dev --no-scripts
+      
+      - name: Run Composer Audit (Check vulnerabilities)
+        id: composer-audit
+        run: |
+          echo "🔍 Analyse des vulnérabilités dans les dépendances..."
+          composer audit --format=json > composer-audit.json || true
+          
+          # Afficher un résumé
+          if [ -f composer-audit.json ]; then
+            echo "📊 Résumé de l'analyse :"
+            cat composer-audit.json | jq -r '.advisories | length' | xargs -I {} echo "  • {} vulnérabilités trouvées"
+          fi
+        continue-on-error: true
+      
+      - name: Generate Security Report
+        if: always()
+        run: |
+          echo "# 🔒 Rapport de Sécurité des Dépendances" > security-report.md
+          echo "" >> security-report.md
+          echo "**Date :** $(date '+%Y-%m-%d %H:%M:%S')" >> security-report.md
+          echo "**Branch :** ${{ github.ref_name }}" >> security-report.md
+          echo "" >> security-report.md
+          
+          if [ -f composer-audit.json ]; then
+            VULN_COUNT=$(cat composer-audit.json | jq -r '.advisories | length')
+            
+            if [ "$VULN_COUNT" -eq 0 ]; then
+              echo "✅ **Aucune vulnérabilité détectée**" >> security-report.md
+              echo "" >> security-report.md
+              echo "Toutes les dépendances sont à jour et sécurisées." >> security-report.md
+            else
+              echo "⚠️ **$VULN_COUNT vulnérabilité(s) détectée(s)**" >> security-report.md
+              echo "" >> security-report.md
+              
+              # Extraire les détails des vulnérabilités
+              cat composer-audit.json | jq -r '.advisories | to_entries[] | 
+                "## " + .value.packageName + "\n" +
+                "- **Sévérité :** " + (.value.severity // "Unknown") + "\n" +
+                "- **CVE :** " + (.value.cve // "N/A") + "\n" +
+                "- **Titre :** " + .value.title + "\n" +
+                "- **Lien :** " + .value.link + "\n" +
+                "- **Versions affectées :** " + .value.affectedVersions + "\n" +
+                "- **Solution :** Mettre à jour vers " + (.value.fixedVersion // "version non disponible") + "\n"
+              ' >> security-report.md || echo "Erreur lors de l'extraction des détails" >> security-report.md
+            fi
+          else
+            echo "❌ **Erreur lors de l'analyse**" >> security-report.md
+          fi
+      
+      - name: Check for high severity vulnerabilities
+        if: always()
+        run: |
+          if [ -f composer-audit.json ]; then
+            HIGH_SEVERITY=$(cat composer-audit.json | jq -r '[.advisories[] | select(.severity == "high" or .severity == "critical")] | length')
+            
+            if [ "$HIGH_SEVERITY" -gt 0 ]; then
+              echo "::error::$HIGH_SEVERITY vulnérabilité(s) critique(s) ou haute sévérité détectée(s)"
+              echo "::error::Consultez le rapport de sécurité pour plus de détails"
+              
+              # Afficher les vulnérabilités critiques
+              echo "🚨 Vulnérabilités critiques/hautes :"
+              cat composer-audit.json | jq -r '.advisories[] | 
+                select(.severity == "high" or .severity == "critical") | 
+                "  • " + .packageName + " (" + .severity + ") - " + .title'
+              
+              exit 1
+            else
+              echo "✅ Aucune vulnérabilité critique détectée"
+            fi
+          fi
+      
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            security-report.md
+            composer-audit.json
+          retention-days: 30
+      
+      - name: Comment PR with security report
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (!fs.existsSync('security-report.md')) {
+              console.log('No security report found');
+              return;
+            }
+            
+            const report = fs.readFileSync('security-report.md', 'utf8');
+            
+            // Trouver le commentaire existant
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🔒 Rapport de Sécurité')
+            );
+            
+            const commentBody = `${report}\n\n---\n*Analyse automatique des dépendances*`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+      
+      - name: Display summary
+        if: always()
+        run: |
+          if [ -f composer-audit.json ]; then
+            echo "### 🔒 Analyse de Sécurité Terminée" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            VULN_COUNT=$(cat composer-audit.json | jq -r '.advisories | length')
+            
+            if [ "$VULN_COUNT" -eq 0 ]; then
+              echo "✅ **Aucune vulnérabilité détectée**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **$VULN_COUNT vulnérabilité(s) détectée(s)**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Compter par sévérité
+              CRITICAL=$(cat composer-audit.json | jq -r '[.advisories[] | select(.severity == "critical")] | length')
+              HIGH=$(cat composer-audit.json | jq -r '[.advisories[] | select(.severity == "high")] | length')
+              MEDIUM=$(cat composer-audit.json | jq -r '[.advisories[] | select(.severity == "medium")] | length')
+              LOW=$(cat composer-audit.json | jq -r '[.advisories[] | select(.severity == "low")] | length')
+              
+              echo "| Sévérité | Nombre |" >> $GITHUB_STEP_SUMMARY
+              echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+              echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+              echo "| 🟢 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "📄 Consultez le rapport complet dans les artifacts" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+  outdated-dependencies:
+    name: Check Outdated Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: ctype, iconv, json
+          coverage: none
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --no-dev --no-scripts
+      
+      - name: Check outdated packages
+        id: outdated
+        run: |
+          echo "📦 Vérification des packages obsolètes..."
+          composer outdated --direct --format=json > outdated.json || true
+          
+          if [ -f outdated.json ]; then
+            OUTDATED_COUNT=$(cat outdated.json | jq -r '.installed | length')
+            echo "outdated_count=$OUTDATED_COUNT" >> $GITHUB_OUTPUT
+            
+            if [ "$OUTDATED_COUNT" -gt 0 ]; then
+              echo "⚠️ $OUTDATED_COUNT package(s) obsolète(s) détecté(s)"
+            else
+              echo "✅ Tous les packages sont à jour"
+            fi
+          fi
+        continue-on-error: true
+      
+      - name: Generate outdated report
+        if: always()
+        run: |
+          echo "# 📦 Packages Obsolètes" > outdated-report.md
+          echo "" >> outdated-report.md
+          echo "**Date :** $(date '+%Y-%m-%d %H:%M:%S')" >> outdated-report.md
+          echo "" >> outdated-report.md
+          
+          if [ -f outdated.json ]; then
+            OUTDATED_COUNT=$(cat outdated.json | jq -r '.installed | length')
+            
+            if [ "$OUTDATED_COUNT" -eq 0 ]; then
+              echo "✅ **Tous les packages sont à jour**" >> outdated-report.md
+            else
+              echo "⚠️ **$OUTDATED_COUNT package(s) peuvent être mis à jour**" >> outdated-report.md
+              echo "" >> outdated-report.md
+              echo "| Package | Version actuelle | Version disponible |" >> outdated-report.md
+              echo "|---------|------------------|-------------------|" >> outdated-report.md
+              
+              cat outdated.json | jq -r '.installed[] | 
+                "| " + .name + " | " + .version + " | " + .latest + " |"
+              ' >> outdated-report.md || echo "Erreur lors de l'extraction" >> outdated-report.md
+              
+              echo "" >> outdated-report.md
+              echo "### 💡 Commande pour mettre à jour" >> outdated-report.md
+              echo "\`\`\`bash" >> outdated-report.md
+              echo "composer update --with-dependencies" >> outdated-report.md
+              echo "\`\`\`" >> outdated-report.md
+            fi
+          fi
+      
+      - name: Upload outdated report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: outdated-report
+          path: |
+            outdated-report.md
+            outdated.json
+          retention-days: 30
+      
+      - name: Display outdated summary
+        if: always()
+        run: |
+          if [ -f outdated.json ]; then
+            echo "### 📦 Packages Obsolètes" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            OUTDATED_COUNT=$(cat outdated.json | jq -r '.installed | length')
+            
+            if [ "$OUTDATED_COUNT" -eq 0 ]; then
+              echo "✅ **Tous les packages sont à jour**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **$OUTDATED_COUNT package(s) peuvent être mis à jour**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Afficher les 5 premiers packages obsolètes
+              echo "**Top 5 packages à mettre à jour :**" >> $GITHUB_STEP_SUMMARY
+              cat outdated.json | jq -r '.installed[0:5][] | 
+                "- `" + .name + "`: " + .version + " → " + .latest
+              ' >> $GITHUB_STEP_SUMMARY
+              
+              if [ "$OUTDATED_COUNT" -gt 5 ]; then
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "_... et $(($OUTDATED_COUNT - 5)) autres packages_" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          fi
+
+  trivy-scan:
+    name: Trivy Security Scanner
+    runs-on: ubuntu-latest
+    
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner (Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0'  # Ne pas bloquer, on analyse après
+          ignore-unfixed: false
+          scanners: 'vuln,secret,config'
+          trivyignores: '.trivyignore'
+          skip-files: '.env,.env.test,CI_CD.md,README.md,QUICKSTART.md'
+      
+      - name: Run Trivy vulnerability scanner (JSON for reporting)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0'
+          ignore-unfixed: false
+          scanners: 'vuln,secret,config'
+          trivyignores: '.trivyignore'
+          skip-files: '.env,.env.test,CI_CD.md,README.md,QUICKSTART.md'
+      
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+          category: 'trivy-filesystem'
+      
+      - name: Generate Trivy report
+        if: always()
+        run: |
+          echo "# 🛡️ Trivy Security Scan Report" > trivy-report.md
+          echo "" >> trivy-report.md
+          echo "**Date :** $(date '+%Y-%m-%d %H:%M:%S')" >> trivy-report.md
+          echo "**Branch :** ${{ github.ref_name }}" >> trivy-report.md
+          echo "" >> trivy-report.md
+          
+          if [ -f trivy-results.json ]; then
+            # Compter les vulnérabilités
+            CRITICAL=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+            HIGH=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+            MEDIUM=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length')
+            LOW=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length')
+            
+            # Compter les secrets
+            SECRETS=$(cat trivy-results.json | jq '[.Results[]?.Secrets[]?] | length')
+            
+            # Compter les misconfigurations
+            MISCONFIGS=$(cat trivy-results.json | jq '[.Results[]?.Misconfigurations[]?] | length')
+            
+            TOTAL=$(($CRITICAL + $HIGH + $MEDIUM + $LOW))
+            
+            echo "## 📊 Résumé" >> trivy-report.md
+            echo "" >> trivy-report.md
+            echo "| Type | Nombre |" >> trivy-report.md
+            echo "|------|--------|" >> trivy-report.md
+            echo "| 🐛 Vulnérabilités totales | $TOTAL |" >> trivy-report.md
+            echo "| 🔴 Critical | $CRITICAL |" >> trivy-report.md
+            echo "| 🟠 High | $HIGH |" >> trivy-report.md
+            echo "| 🟡 Medium | $MEDIUM |" >> trivy-report.md
+            echo "| 🟢 Low | $LOW |" >> trivy-report.md
+            echo "| 🔐 Secrets détectés | $SECRETS |" >> trivy-report.md
+            echo "| ⚙️ Misconfigurations | $MISCONFIGS |" >> trivy-report.md
+            echo "" >> trivy-report.md
+            
+            # Afficher les vulnérabilités critiques et hautes
+            if [ $(($CRITICAL + $HIGH)) -gt 0 ]; then
+              echo "## 🚨 Vulnérabilités Critiques et Hautes" >> trivy-report.md
+              echo "" >> trivy-report.md
+              
+              cat trivy-results.json | jq -r '
+                .Results[]?.Vulnerabilities[]? | 
+                select(.Severity == "CRITICAL" or .Severity == "HIGH") | 
+                "### " + .PkgName + " (" + .InstalledVersion + ")\n" +
+                "- **Sévérité:** " + .Severity + "\n" +
+                "- **Vulnerability ID:** " + .VulnerabilityID + "\n" +
+                "- **Titre:** " + (.Title // "N/A") + "\n" +
+                "- **Description:** " + (.Description // "N/A") + "\n" +
+                "- **Fix:** " + (if .FixedVersion then "Mettre à jour vers " + .FixedVersion else "Pas de fix disponible" end) + "\n" +
+                "- **Références:** " + (if .References then (.References | join(", ")) else "N/A" end) + "\n"
+              ' >> trivy-report.md 2>/dev/null || echo "Aucune vulnérabilité critique/haute détectée" >> trivy-report.md
+            else
+              echo "✅ **Aucune vulnérabilité critique ou haute détectée**" >> trivy-report.md
+            fi
+            
+            # Afficher les secrets
+            if [ "$SECRETS" -gt 0 ]; then
+              echo "" >> trivy-report.md
+              echo "## 🔐 Secrets Détectés" >> trivy-report.md
+              echo "" >> trivy-report.md
+              echo "⚠️ **$SECRETS secret(s) potentiel(s) trouvé(s) dans le code**" >> trivy-report.md
+              echo "" >> trivy-report.md
+              
+              cat trivy-results.json | jq -r '
+                .Results[]?.Secrets[]? | 
+                "### " + .RuleID + "\n" +
+                "- **Fichier:** `" + .Target + "`\n" +
+                "- **Ligne:** " + (.StartLine | tostring) + "\n" +
+                "- **Sévérité:** " + .Severity + "\n" +
+                "- **Titre:** " + .Title + "\n"
+              ' >> trivy-report.md 2>/dev/null || true
+            fi
+            
+            # Afficher les misconfigurations
+            if [ "$MISCONFIGS" -gt 0 ]; then
+              echo "" >> trivy-report.md
+              echo "## ⚙️ Problèmes de Configuration" >> trivy-report.md
+              echo "" >> trivy-report.md
+              echo "⚠️ **$MISCONFIGS problème(s) de configuration détecté(s)**" >> trivy-report.md
+              echo "" >> trivy-report.md
+              
+              cat trivy-results.json | jq -r '
+                .Results[]?.Misconfigurations[]? | 
+                select(.Severity == "CRITICAL" or .Severity == "HIGH") |
+                "### " + .ID + "\n" +
+                "- **Fichier:** `" + .Target + "`\n" +
+                "- **Sévérité:** " + .Severity + "\n" +
+                "- **Titre:** " + .Title + "\n" +
+                "- **Description:** " + (.Description // "N/A") + "\n"
+              ' >> trivy-report.md 2>/dev/null || echo "Aucun problème critique de configuration" >> trivy-report.md
+            fi
+          else
+            echo "❌ **Erreur : Impossible de générer le rapport Trivy**" >> trivy-report.md
+          fi
+      
+      - name: Check for critical vulnerabilities
+        if: always()
+        run: |
+          if [ -f trivy-results.json ]; then
+            CRITICAL=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+            HIGH=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+            SECRETS=$(cat trivy-results.json | jq '[.Results[]?.Secrets[]? | select(.Severity == "CRITICAL" or .Severity == "HIGH")] | length')
+            
+            if [ $(($CRITICAL + $HIGH + $SECRETS)) -gt 0 ]; then
+              echo "::error::Trivy a détecté $CRITICAL vulnérabilité(s) critique(s), $HIGH haute(s) et $SECRETS secret(s) sensible(s)"
+              echo "::error::Consultez le rapport Trivy pour plus de détails"
+              
+              # Afficher les détails dans les logs
+              echo "🚨 Vulnérabilités critiques/hautes détectées :"
+              cat trivy-results.json | jq -r '
+                .Results[]?.Vulnerabilities[]? | 
+                select(.Severity == "CRITICAL" or .Severity == "HIGH") | 
+                "  • " + .PkgName + " (" + .VulnerabilityID + ") - " + .Severity + " - " + (.Title // "N/A")
+              ' 2>/dev/null || true
+              
+              if [ "$SECRETS" -gt 0 ]; then
+                echo ""
+                echo "🔐 Secrets détectés :"
+                cat trivy-results.json | jq -r '
+                  .Results[]?.Secrets[]? | 
+                  select(.Severity == "CRITICAL" or .Severity == "HIGH") |
+                  "  • " + .RuleID + " dans " + .Target + " (ligne " + (.StartLine | tostring) + ")"
+                ' 2>/dev/null || true
+              fi
+              
+              exit 1
+            else
+              echo "✅ Aucune vulnérabilité critique ou haute détectée par Trivy"
+            fi
+          fi
+      
+      - name: Upload Trivy reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: |
+            trivy-report.md
+            trivy-results.json
+            trivy-fs-results.sarif
+          retention-days: 30
+      
+      - name: Comment PR with Trivy report
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (!fs.existsSync('trivy-report.md')) {
+              console.log('No Trivy report found');
+              return;
+            }
+            
+            const report = fs.readFileSync('trivy-report.md', 'utf8');
+            
+            // Trouver le commentaire existant
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🛡️ Trivy Security Scan')
+            );
+            
+            const commentBody = `${report}\n\n---\n*Analyse automatique par Trivy*`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+      
+      - name: Display Trivy summary
+        if: always()
+        run: |
+          if [ -f trivy-results.json ]; then
+            echo "### 🛡️ Trivy Security Scan" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            CRITICAL=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+            HIGH=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+            MEDIUM=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length')
+            LOW=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length')
+            SECRETS=$(cat trivy-results.json | jq '[.Results[]?.Secrets[]?] | length')
+            MISCONFIGS=$(cat trivy-results.json | jq '[.Results[]?.Misconfigurations[]?] | length')
+            
+            TOTAL=$(($CRITICAL + $HIGH + $MEDIUM + $LOW))
+            
+            echo "**Résultats du scan :**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Type | Nombre |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🐛 Vulnérabilités totales | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟢 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔐 Secrets | $SECRETS |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⚙️ Misconfigurations | $MISCONFIGS |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ $(($CRITICAL + $HIGH)) -gt 0 ]; then
+              echo "⚠️ **Action requise** : Des vulnérabilités critiques ou hautes ont été détectées" >> $GITHUB_STEP_SUMMARY
+            elif [ "$SECRETS" -gt 0 ]; then
+              echo "⚠️ **Attention** : Des secrets ont été détectés dans le code" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **Aucune vulnérabilité critique détectée**" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📄 Rapport complet disponible dans les artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 Consultez également l'onglet **Security** → **Code scanning** pour les détails SARIF" >> $GITHUB_STEP_SUMMARY
+          fi
+

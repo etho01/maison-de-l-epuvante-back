@@ -19,4 +19,17 @@
 ###> phpunit/phpunit ###
 /phpunit.xml
 /.phpunit.cache/
+/coverage/
+/coverage.xml
+/var/test.db
 ###< phpunit/phpunit ###
+
+###> security-scan ###
+/composer-audit.json
+/outdated.json
+/security-report.md
+/outdated-report.md
+/trivy-results.json
+/trivy-report.md
+/trivy-fs-results.sarif
+###< security-scan ###

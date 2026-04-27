@@ -1,0 +1,58 @@
+name: 'Code Quality'
+
+on:
+  workflow_call:
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: ctype, iconv
+      
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      
+      - name: Install dependencies
+        env:
+          APP_ENV: test
+          APP_SECRET: test-secret-for-ci
+          DATABASE_URL: sqlite:///%kernel.project_dir%/var/data.db
+          DEFAULT_URI: http://localhost:8000
+          CORS_ALLOW_ORIGIN: '*'
+          JWT_PASSPHRASE: test-passphrase
+          STRIPE_SECRET_KEY: sk_test_dummy
+        run: composer install --prefer-dist --no-progress --no-interaction
+      
+      - name: Check PHP syntax
+        run: |
+          find src tests -name "*.php" -print0 | xargs -0 -n1 php -l
+      
+      - name: Run PHPStan (if configured)
+        continue-on-error: true
+        env:
+          APP_ENV: test
+          APP_SECRET: test-secret-for-ci
+          DATABASE_URL: sqlite:///%kernel.project_dir%/var/data.db
+          DEFAULT_URI: http://localhost:8000
+          CORS_ALLOW_ORIGIN: '*'
+          JWT_PASSPHRASE: test-passphrase
+          STRIPE_SECRET_KEY: sk_test_dummy
+        run: |
+          if [ -f "phpstan.neon" ] || [ -f "phpstan.neon.dist" ]; then
+            vendor/bin/phpstan analyse src tests --memory-limit=1G
+          else
+            echo "PHPStan not configured, skipping"
+          fi

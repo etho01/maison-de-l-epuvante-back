@@ -1,0 +1,37 @@
+# .trivyignore - Trivy false positives exclusion
+# Documentation: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+
+# ====================================================================
+# IMPORTANT: FILE EXCLUSIONS FOR SECRET SCANNING
+# ====================================================================
+# This file (.trivyignore) is used to ignore specific VULNERABILITIES (by CVE ID).
+# To ignore ENTIRE FILES from secret scanning, we use --skip-files in:
+#   - .github/workflows/security-scan.yml (skip-files parameter)
+#   - security-scan.sh (--skip-files flag)
+#
+# Files currently skipped from secret scanning:
+#   - .env              (Docker/K8s placeholders, not real secrets)
+#   - .env.test         (Mock test credentials)
+#   - CI_CD.md          (Documentation with examples)
+#   - README.md         (Documentation with examples)
+#   - QUICKSTART.md     (Documentation with examples)
+#
+# ====================================================================
+# VULNERABILITY EXCLUSIONS (CVE-based)
+# ====================================================================
+# Use this file to ignore specific vulnerabilities by CVE ID or package name.
+# Format:
+#   CVE-2023-12345
+#   pkg:composer/vendor/package@1.2.3
+#
+# Example to ignore a specific CVE:
+# CVE-2023-46733
+#
+# Example to ignore all vulnerabilities in a specific package:
+# php-http/message@1.0.0
+#
+# ====================================================================
+# FALSE POSITIVES - Add below
+# ====================================================================
+
+# Add CVE IDs or package identifiers here if needed

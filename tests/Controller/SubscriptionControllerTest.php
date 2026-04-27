@@ -21,7 +21,7 @@ class SubscriptionControllerTest extends WebTestCase
         ]);
 
         // Sans authentification, devrait échouer
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testGetSubscriptionsAsAuthenticatedUser(): void

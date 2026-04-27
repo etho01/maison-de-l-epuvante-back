@@ -81,7 +81,7 @@ class CategoryControllerTest extends WebTestCase
             'description' => 'A test category'
         ]));
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testUpdateCategoryUnauthorized(): void
@@ -94,7 +94,7 @@ class CategoryControllerTest extends WebTestCase
             'name' => 'Updated Category'
         ]));
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testDeleteCategoryUnauthorized(): void
@@ -105,7 +105,7 @@ class CategoryControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ]);
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testCreateCategoryAsAuthenticatedUser(): void

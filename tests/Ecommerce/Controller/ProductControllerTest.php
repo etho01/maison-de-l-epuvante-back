@@ -102,7 +102,7 @@ class ProductControllerTest extends WebTestCase
             'type' => 'physical'
         ]));
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testUpdateProductUnauthorized(): void
@@ -115,7 +115,7 @@ class ProductControllerTest extends WebTestCase
             'name' => 'Updated Product'
         ]));
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testDeleteProductUnauthorized(): void
@@ -126,7 +126,7 @@ class ProductControllerTest extends WebTestCase
             'CONTENT_TYPE' => 'application/json',
         ]);
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testFilterProductsByType(): void

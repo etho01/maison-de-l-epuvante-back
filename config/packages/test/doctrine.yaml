@@ -1,0 +1,12 @@
+doctrine:
+    dbal:
+        # Utiliser DATABASE_URL pour les tests avec SQLite
+        url: '%env(resolve:DATABASE_URL)%'
+        # Supprimer les configurations spécifiques à MySQL
+        driver: null
+        host: null
+        port: null
+        dbname: null
+        user: null
+        password: null
+        server_version: null

@@ -8,10 +8,12 @@
 ![API Platform](https://img.shields.io/badge/API%20Platform-4.2-38A3A5?logo=api&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 ![Tests](https://img.shields.io/badge/Tests-PHPUnit-3C9CD7?logo=testing-library&logoColor=white)
+![SonarQube](https://img.shields.io/badge/Quality-SonarQube-4E9BCD?logo=sonarqube&logoColor=white)
+![Security](https://img.shields.io/badge/Security-Composer%20Audit-success?logo=security&logoColor=white)
 
 **API REST moderne et complète développée avec Symfony 7.4 et API Platform**
 
-[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Architecture](#-architecture)
+[Fonctionnalités](#-fonctionnalités-clés) • [Installation](#-installation) • [Documentation](#-documentation) • [Tests](#-tests) • [Qualité du code](#-qualité-du-code) • [Sécurité](#-sécurité) • [CI/CD](#-cicd) • [Architecture](#-architecture)
 
 </div>
 
@@ -267,8 +269,331 @@ Le projet inclut **16 suites de tests** :
 - ✅ Tests e-commerce (produits, catégories, commandes)
 
 ---
+## 🔍 Qualité du code
 
-## 🔐 Sécurité
+Le projet utilise **SonarQube** pour l'analyse statique du code et la mesure de la qualité.
+
+### Analyser localement
+
+```bash
+# Avec Docker (recommandé)
+./sonar-scan.sh
+
+# Le script va :
+# 1. Exécuter les tests avec couverture
+# 2. Envoyer les résultats à SonarQube
+# 3. Afficher l'URL des résultats
+```
+
+### Configuration requise
+
+1. **Démarrer SonarQube** :
+```bash
+docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
+```
+
+2. **Configurer le token** :
+```bash
+export SONAR_TOKEN=votre_token_ici
+export SONAR_HOST_URL=http://localhost:9000
+```
+
+3. **Lancer l'analyse** :
+```bash
+./sonar-scan.sh
+```
+
+### Métriques suivies
+
+- 🐛 **Bugs** : Problèmes de logique
+- 🔒 **Vulnerabilities** : Failles de sécurité
+- 🧹 **Code Smells** : Problèmes de maintenabilité
+- 📊 **Coverage** : Couverture de code (objectif: > 80%)
+- 📋 **Duplications** : Code dupliqué (objectif: < 3%)
+
+📖 **Documentation complète** : Voir [SONARQUBE.md](SONARQUBE.md)
+
+---
+
+## 🔒 Sécurité
+
+Le projet intègre une **analyse automatique de sécurité complète** pour détecter les vulnérabilités.
+
+### Analyser localement
+
+```bash
+# Analyser les vulnérabilités et packages obsolètes
+./security-scan.sh
+
+# Le script va :
+# 1. Analyser les vulnérabilités (composer audit)
+# 2. Vérifier les packages obsolètes (composer outdated)
+# 3. Scanner avec Trivy (vulnérabilités, secrets, configs)
+# 4. Générer des rapports détaillés
+# 5. Bloquer si vulnérabilités critiques/hautes ou secrets
+```
+
+### Types d'analyses
+
+#### 🔍 Analyse des vulnérabilités PHP
+
+Utilise **`composer audit`** pour détecter les CVE connus dans les dépendances PHP.
+
+**Exemple de sortie :**
+```
+🔒 Vulnérabilités : 3
+   🔴 Critical: 1
+   🟠 High: 1
+   🟡 Medium: 1
+
+• symfony/http-kernel (high)
+  Symfony HTTP kernel vulnerable to cache poisoning
+  CVE: CVE-2023-46733 | Fix: 5.4.31
+```
+
+#### 📦 Vérification des packages obsolètes
+
+Liste tous les packages qui peuvent être mis à jour.
+
+**Exemple de sortie :**
+```
+📦 Packages obsolètes : 8
+
+• symfony/console: 7.0.1 → 7.0.7
+• doctrine/orm: 3.0.0 → 3.1.2
+...
+
+💡 Pour mettre à jour :
+composer update --with-dependencies
+```
+
+#### 🛡️ Scan de sécurité complet (Trivy)
+
+Utilise **Trivy** (Aqua Security) pour un scan de sécurité complet du projet.
+
+**Ce que Trivy détecte :**
+- 🐛 Vulnérabilités dans les dépendances (toutes langues)
+- 🔐 Secrets hardcodés (API keys, tokens, passwords)
+- ⚙️ Problèmes de configuration (Dockerfile, YAML, etc.)
+- 📜 Licences non conformes
+
+**Exemple de sortie :**
+```
+🛡️ Trivy : 15 vulnérabilités
+   🔴 Critical: 2
+   🟠 High: 5
+   🔐 Secrets: 0
+
+• symfony/http-kernel (CVE-2023-46733) - CRITICAL
+  HTTP kernel vulnerable to cache poisoning
+  
+• guzzlehttp/psr7 (CVE-2023-29197) - HIGH
+  Improper header validation
+```
+
+**Upload vers GitHub Security :**
+
+Les résultats Trivy sont automatiquement uploadés vers **Security** → **Code scanning** où vous pouvez :
+- Voir les vulnérabilités annotées sur le code
+- Filtrer par sévérité
+- Suivre l'historique des scans
+- Recevoir des alertes automatiques
+
+#### 🐳 Scan de l'image Docker (Déploiement)
+
+En plus du scan du filesystem, **Trivy scanne également l'image Docker finale** lors du déploiement.
+
+**Quand :** Avant chaque déploiement sur Kubernetes (workflow `action-deploy.yml`)
+
+**Ce qui est scanné :**
+- 📦 Packages système de l'image de base (Alpine/Debian)
+- 🔐 Vulnérabilités dans les extensions PHP compilées
+- 🚨 Secrets accidentellement copiés dans les couches Docker
+- ⚙️ Configuration de l'image Docker
+
+**Pipeline :**
+```
+Build Image → Scan Docker (Trivy) → Deploy K8s
+                    ↓
+              Bloque si critical/high
+```
+
+**Résultats :** Uploadés vers **Security** → **Code scanning** (catégorie `trivy-docker-image`)
+
+**⚠️ Important :** Le déploiement est **bloqué** si des vulnérabilités critical/high sont trouvées dans l'image.
+
+### Workflow automatique
+
+Le workflow **`.github/workflows/security-scan.yml`** s'exécute :
+- ✅ Sur chaque push (sauf `main`)
+- ✅ Sur chaque pull request vers `main`
+- ✅ **Quotidiennement** à 2h du matin (analyse planifiée)
+
+**Actions automatiques :**
+- Génération de rapports de sécurité (Composer + Trivy)
+- Commentaires automatiques sur les PR
+- Upload des artefacts (rapports JSON)
+- **Blocage du CI/CD** si vulnérabilités critiques/hautes
+- Affichage d'un résumé dans GitHub Actions
+- Upload vers GitHub Security / Code Scanning (Trivy)
+
+### Seuils de blocage
+
+Le workflow **bloque** si :
+- ❌ Vulnérabilités **critical** détectées (Composer ou Trivy)
+- ❌ Vulnérabilités **high** détectées (Composer ou Trivy)
+- ❌ Secrets **critical/high** détectés (Trivy)
+
+Le workflow **continue** si :
+- ✅ Vulnérabilités **medium** ou **low** uniquement
+- ✅ Packages obsolètes détectés
+- ✅ Aucun problème détecté
+
+### Outils utilisés
+
+- **composer audit** : Détection des CVE dans les dépendances PHP
+- **composer outdated** : Liste des packages obsolètes
+- **Trivy** : Scanner de sécurité complet (vulns, secrets, configs)
+- **PHP Security Advisories Database** : Base de données de vulnérabilités
+- **GitHub Security / Code Scanning** : Intégration native GitHub
+
+### Bonnes pratiques
+
+1. **Exécutez localement** avant de pousser :
+   ```bash
+   ./security-scan.sh
+   ```
+
+2. **Consultez les rapports** dans GitHub Actions (onglet "Artifacts")
+
+3. **Mettez à jour régulièrement** :
+   ```bash
+   composer update --with-dependencies
+   composer audit
+   ```
+
+4. **Priorisez** : Corrigez d'abord les critical/high
+
+5. **Testez après mise à jour** :
+   ```bash
+   ./run-tests.sh
+   ```
+
+📖 **Documentation complète** : Voir [SECURITY_SCAN.md](SECURITY_SCAN.md)
+
+---
+
+## 🔄 CI/CD
+
+Le projet utilise **GitHub Actions** pour l'intégration et le déploiement continus.
+
+### Workflows disponibles
+
+#### 🧪 Tests automatiques (`.github/workflows/test.yml`)
+- **Déclenché sur** : Pull Requests vers `main`, push sur `develop` et branches `feature/*`
+- **Actions** :
+  - Installation des dépendances PHP
+  - Configuration de l'environnement de test avec SQLite
+  - Génération des clés JWT
+  - Exécution de tous les tests PHPUnit
+  - Génération du rapport de couverture de code
+  - Upload des résultats vers Codecov
+  - Vérification de la qualité du code (syntaxe PHP)
+
+#### � Analyse SonarQube (`.github/workflows/sonarqube.yml`)
+- **Déclenché sur** : Push sur `main`/`develop`, Pull Requests vers `main`
+- **Actions** :
+  - Installation des dépendances et setup de l'environnement
+  - Exécution des tests avec couverture de code
+  - Analyse SonarQube complète
+  - Quality Gate check (peut bloquer si échec)
+  - Upload des rapports de couverture
+
+#### � Analyse de sécurité (`.github/workflows/security-scan.yml`)
+- **Déclenché sur** : Push (sauf `main`), Pull Requests vers `main`, quotidiennement à 2h
+- **Actions** :
+  - **Job 1 - Vulnérabilités** :
+    - Analyse avec `composer audit` (détection CVE)
+    - Génération de rapport de sécurité détaillé
+    - Commentaires automatiques sur les PR
+    - **Blocage si vulnérabilités critical/high**
+    - Upload des artefacts (rapports JSON + Markdown)
+  - **Job 2 - Packages obsolètes** :
+    - Vérification avec `composer outdated`
+    - Liste des packages à mettre à jour
+    - Rapport avec versions disponibles
+- **Artefacts** : Rapports conservés 30 jours
+- **Résumé** : Tableau par sévérité dans GitHub Actions
+
+#### �🚀 Déploiement en production (`.github/workflows/deploy.yml`)
+- **Déclenché sur** : Push sur la branche `main`
+- **Actions** :
+  1. **Tests** : Exécution complète de la suite de tests (bloque le déploiement si échec)
+  2. **Build** : Construction de l'image Docker et push vers GHCR
+  3. **Deploy** : Déploiement sur le cluster K3s avec :
+     - Configuration du SecretStore Vault
+     - Synchronisation des secrets depuis Vault
+     - Exécution des migrations de base de données
+     - Rollout progressif avec vérification de santé
+     - Rollback automatique en cas d'échec
+
+### Configuration requise
+
+Pour que les workflows fonctionnent, assurez-vous d'avoir configuré ces secrets GitHub :
+
+```
+GITHUB_TOKEN          # Automatiquement fourni par GitHub Actions
+KUBECONFIG_B64        # Configuration kubectl encodée en base64
+SONAR_TOKEN           # Token d'authentification SonarQube
+SONAR_HOST_URL        # URL du serveur SonarQube
+```
+
+### Exécution locale des tests CI
+
+Pour reproduire l'environnement CI localement :
+
+```bash
+# Créer le fichier .env.test
+cat > .env.test << EOF
+KERNEL_CLASS='App\Kernel'
+APP_SECRET='test-secret-for-ci'
+DATABASE_URL="sqlite:///%kernel.project_dir%/var/test.db"
+CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+DEFAULT_URI=http://localhost:8000
+FRONTEND_URL=http://localhost:3000
+JWT_PASSPHRASE=test-passphrase
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+MAILER_DSN=null://null
+STRIPE_SECRET_KEY=sk_test_mock_key
+EOF
+
+# Générer les clés JWT
+openssl genrsa -out config/jwt/private.pem -aes256 -passout pass:test-passphrase 4096
+openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem -passin pass:test-passphrase
+
+# Installer les dépendances
+composer install
+
+# Nettoyer le cache
+php bin/console cache:clear --env=test
+
+# Lancer les tests
+php bin/phpunit
+```
+
+### Badges de statut
+
+Vous pouvez ajouter ces badges à votre README :
+
+```markdown
+![Tests](https://github.com/VOTRE_USERNAME/maison-de-lepouvante/workflows/Tests/badge.svg)
+![Deploy](https://github.com/VOTRE_USERNAME/maison-de-lepouvante/workflows/Deploy/badge.svg)
+```
+
+---
+
+## �🔐 Sécurité
 
 ### Authentification
 - 🔒 **Mots de passe hashés** avec l'algorithme `bcrypt` (auto)
