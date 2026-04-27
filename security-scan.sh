@@ -167,6 +167,7 @@ if [ "$TRIVY_AVAILABLE" = false ]; then
             --severity CRITICAL,HIGH,MEDIUM,LOW \
             --scanners vuln,secret,config \
             --ignorefile /scan/.trivyignore \
+            --skip-files '.env,.env.test,CI_CD.md,README.md,QUICKSTART.md' \
             --quiet \
             /scan 2>/dev/null; then
             TRIVY_EXIT_CODE=0
@@ -189,6 +190,7 @@ else
         --severity CRITICAL,HIGH,MEDIUM,LOW \
         --scanners vuln,secret,config \
         --ignorefile .trivyignore \
+        --skip-files '.env,.env.test,CI_CD.md,README.md,QUICKSTART.md' \
         --quiet \
         . 2>/dev/null; then
         TRIVY_EXIT_CODE=0

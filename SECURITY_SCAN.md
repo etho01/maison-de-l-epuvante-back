@@ -361,18 +361,41 @@ Pour installer Trivy localement, voir la section **Dépendances** ci-dessus.
 
 ### "Trivy détecte des secrets qui sont des faux positifs"
 
-Trivy peut détecter des patterns qui ressemblent à des secrets :
+Trivy peut détecter des patterns qui ressemblent à des secrets. Il existe deux méthodes pour gérer les faux positifs :
 
-1. **Vérifiez** si c'est vraiment un faux positif
-2. **Créez** un fichier `.trivyignore` à la racine :
-   ```
-   # False positive dans les tests
-   tests/fixtures/example_api_key.txt
-   
-   # Documentation avec exemples
-   docs/api-examples.md
-   ```
-3. **Commitez** le fichier `.trivyignore`
+#### Méthode 1 : Ignorer des fichiers entiers (recommandé pour secrets)
+
+Utilisez `--skip-files` pour ignorer des fichiers contenant des placeholders ou mock credentials :
+
+**Dans le workflow GitHub Actions** (`.github/workflows/security-scan.yml`) :
+```yaml
+- name: Run Trivy vulnerability scanner
+  uses: aquasecurity/trivy-action@master
+  with:
+    skip-files: '.env,.env.test,docs/examples.md'
+```
+
+**Dans le script local** (`security-scan.sh`) :
+```bash
+trivy fs --skip-files '.env,.env.test,docs/examples.md' .
+```
+
+**Fichiers actuellement exclus :**
+- `.env` - Placeholders Docker/Kubernetes
+- `.env.test` - Mock credentials de test
+- `CI_CD.md`, `README.md`, `QUICKSTART.md` - Documentation avec exemples
+
+#### Méthode 2 : Ignorer des vulnérabilités spécifiques
+
+Le fichier `.trivyignore` est utilisé pour ignorer des **CVE spécifiques**, pas des fichiers :
+
+```
+# Ignorer une CVE spécifique
+CVE-2023-12345
+
+# Ignorer toutes les vulnérabilités d'un package
+pkg:composer/vendor/package@1.2.3
+```
 
 ### "Trop de vulnérabilités détectées"
 
