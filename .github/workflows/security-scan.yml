@@ -331,6 +331,7 @@ jobs:
           exit-code: '0'  # Ne pas bloquer, on analyse après
           ignore-unfixed: false
           scanners: 'vuln,secret,config'
+          trivyignores: '.trivyignore'
       
       - name: Run Trivy vulnerability scanner (JSON for reporting)
         uses: aquasecurity/trivy-action@master
@@ -343,6 +344,7 @@ jobs:
           exit-code: '0'
           ignore-unfixed: false
           scanners: 'vuln,secret,config'
+          trivyignores: '.trivyignore'
       
       - name: Upload Trivy results to GitHub Security
         if: always()

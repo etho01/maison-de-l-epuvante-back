@@ -166,6 +166,7 @@ if [ "$TRIVY_AVAILABLE" = false ]; then
             --output /scan/trivy-results.json \
             --severity CRITICAL,HIGH,MEDIUM,LOW \
             --scanners vuln,secret,config \
+            --ignorefile /scan/.trivyignore \
             --quiet \
             /scan 2>/dev/null; then
             TRIVY_EXIT_CODE=0
@@ -187,6 +188,7 @@ else
         --output trivy-results.json \
         --severity CRITICAL,HIGH,MEDIUM,LOW \
         --scanners vuln,secret,config \
+        --ignorefile .trivyignore \
         --quiet \
         . 2>/dev/null; then
         TRIVY_EXIT_CODE=0
