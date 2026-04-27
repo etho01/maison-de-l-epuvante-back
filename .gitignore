@@ -32,5 +32,4 @@
 /trivy-results.json
 /trivy-report.md
 /trivy-fs-results.sarif
-/.trivyignore
 ###< security-scan ###

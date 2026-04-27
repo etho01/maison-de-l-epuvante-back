@@ -1,0 +1,39 @@
+# .trivyignore - Trivy false positives exclusion
+# Documentation: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+
+# ====================================================================
+# PLACEHOLDERS - NOT REAL SECRETS
+# ====================================================================
+
+# .env file contains placeholders for Docker/Kubernetes build
+# Real secrets are injected at runtime via Kubernetes secrets
+.env
+
+# ====================================================================
+# TEST FILES - MOCK CREDENTIALS
+# ====================================================================
+
+# Test environment file with mock credentials
+.env.test
+
+# GitHub Actions workflows with dummy test keys
+.github/workflows/test.yml
+.github/workflows/code-quality.yml
+.github/workflows/sonarqube.yml
+
+# ====================================================================
+# DOCUMENTATION
+# ====================================================================
+
+# Documentation and examples with placeholder keys
+CI_CD.md
+README.md
+QUICKSTART.md
+
+# ====================================================================
+# FALSE POSITIVES
+# ====================================================================
+
+# Add specific false positives here with format:
+# path/to/file:line_number
+# Example: src/Config/StripeConfig.php:42
