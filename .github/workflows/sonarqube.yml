@@ -2,6 +2,13 @@ name: SonarQube Analysis
 
 on:
   workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        description: 'SonarQube authentication token'
+        required: true
+      SONAR_HOST_URL:
+        description: 'SonarQube server URL'
+        required: true
 
 jobs:
   sonarqube:
@@ -107,8 +114,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        # Optionnel: bloquer le merge si le Quality Gate échoue
-        continue-on-error: true
       
       - name: Upload coverage artifacts
         if: always()

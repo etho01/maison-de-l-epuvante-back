@@ -31,6 +31,7 @@ jobs:
   sonarqube:
     needs: test
     uses: ./.github/workflows/sonarqube.yml
+    secrets: inherit
 
   build-and-push:
     needs: sonarqube

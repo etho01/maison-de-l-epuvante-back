@@ -500,7 +500,7 @@ Le projet utilise **GitHub Actions** pour l'intégration et le déploiement cont
   - Upload des résultats vers Codecov
   - Vérification de la qualité du code (syntaxe PHP)
 
-#### � Analyse SonarQube (`.github/workflows/sonarqube.yml`)
+#### 📊 Analyse SonarQube (`.github/workflows/sonarqube.yml`)
 - **Déclenché sur** : Push sur `main`/`develop`, Pull Requests vers `main`
 - **Actions** :
   - Installation des dépendances et setup de l'environnement

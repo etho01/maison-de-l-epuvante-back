@@ -2,13 +2,6 @@ name: Security Scan
 
 on:
   workflow_call:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
   schedule:
     # Analyse quotidienne à 2h du matin
     - cron: '0 2 * * *'
